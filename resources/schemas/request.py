@@ -20,18 +20,6 @@ class PasswordUpdateRequest(BaseModel):
     new_password: str  # 해시 전
 
 
-# TOKEN-------------
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    email: Optional[str] = None
-    user_id: Optional[int] = None
-    role: Optional[str] = None
-
-
 # ARTICLE--------------
 class ArticleCreate(BaseModel):
     title: str

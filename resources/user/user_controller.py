@@ -50,28 +50,29 @@ async def user_login_handler(
     user_service: UserService = Depends(),
 ):
 
-    try:
-        verified_user: Optional[UserSchema] = await user_service.verify_credentials(
-            request.email, request.password
-        )
+    user: Optional[UserSchema] = await user_service.get_user_by_email(request.email)
 
-        if not verified_user:
-            raise ValueError("Authentication failed")
-
-        ##검토 필요
-        token: str = user_service.create_jwt(
-            {"user_email": verified_user.email, "role": verified_user.role}
-        )
-
-        return JWTResponse(access_token=token)
-
-    except ValueError as exc:
-        # 일반적인 오류 메시지를 사용하여 구체적인 실패 이유를 숨깁니다
+    if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from exc
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Credentials"
+        )
+
+    if not user_service.verify_password(request.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Credentials"
+        )
+        ##검토 필요
+    token: str = user_service.create_jwt({"user_email": user.email, "role": user.role})
+
+    return JWTResponse(access_token=token)
+
+    # except ValueError as exc:
+    #     # 일반적인 오류 메시지를 사용하여 구체적인 실패 이유를 숨깁니다
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail="Invalid credentials",
+    #         headers={"WWW-Authenticate": "Bearer"},
+    #     ) from exc
 
 
 ##검토 필요

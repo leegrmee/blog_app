@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
-from jose import jwt
+from jose import jwt, JWTError
 from passlib.context import CryptContext
 
 
 from resources.schemas.request import UserSignupRequest
-from resources.schemas.response import UserSchema, SignUpSchema
+from resources.schemas.response import UserSchema, SignUpSchema, TokenData
 from resources.user.user_repository import UserRepository
 
 
@@ -49,7 +49,7 @@ class UserService:
             hashed_password.encode(self.encoding),
         )
 
-    def create_jwt(self, data: Dict[str, Any]) -> str:
+    def create_access_token(self, data: Dict[str, Any]) -> str:
         to_encode = data.copy()
         expire = datetime.now(timezone.utc) + timedelta(
             minutes=self.token_expire_minutes
@@ -65,17 +65,20 @@ class UserService:
 
         return jwt_token
 
-    async def verify_credentials(
-        self, email: str, password: str
-    ) -> Optional[UserSchema]:
+    async def verify_access_token(self, token: str, credentials_exception) -> int:
 
-        user: Optional[UserSchema] = await self.get_user_by_email(email)
-        if not user:
-            return None
-        if not self.verify_password(password, user.hashed_password):
-            return None
+        try:
+            payload = jwt.decode(token, self.secretkey, algorithms=[self.jwt_algorithm])
+            user_id: int = payload.get("user_id")
+            if user_id is None:
+                raise credentials_exception
 
-        return user
+            token_data = TokenData(user_id=user_id)
+
+        except JWTError:
+            raise credentials_exception
+
+        return token_data
 
     async def update_password(self, user_email: int, new_password: str) -> UserSchema:
 
