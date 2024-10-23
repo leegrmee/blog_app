@@ -1,70 +1,71 @@
 model User {
-    id       Int       @id @default(autoincrement())
-    name     String
-    email    String    @unique
-    password String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id               Int       @id @default(autoincrement())
+    username         String
+    email            String    @unique
+    hashed_password  String
+    role             String    @default("user")
+    createdAt        DateTime  @default(now())
+    updatedAt        DateTime  @updatedAt
 
-    articles Article[]
-    comments Comment[] 
-    likes    Like[]
+    articles         Article[]
+    comments         Comment[]
+    likes            Like[]
 }
 
 model Article {
-    id        Int      @id @default(autoincrement())
-    title     String
-    content   String
-    views     Int      @default(0)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id              Int      @id @default(autoincrement())
+    title           String
+    content         String
+    views           Int      @default(0)
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
 
-    userId    Int
-    user      User     @relation(fields: [userId], references: [id])
-    
-    comments  Comment[]
-    likes     Like[]
-    categories CategoryToArticle[]
+    userId          Int
+    user            User     @relation(fields: [userId], references: [id])
+
+    comments        Comment[]
+    likes           Like[]
+    categories      CategoryToArticle[]
 }
 
 model Category {
-    id        Int    @id @default(autoincrement())
-    name      String
+    id              Int      @id @default(autoincrement())
+    name            String
 
     articles CategoryToArticle[]
 }
 
 model CategoryToArticle {
-    articleId   Int
-    categoryId  Int
+    articleId       Int
+    categoryId      Int
 
-    article     Article  @relation(fields: [articleId], references: [id])
-    category    Category @relation(fields: [categoryId], references: [id])
+    article         Article  @relation(fields: [articleId], references: [id])
+    category        Category @relation(fields: [categoryId], references: [id])
 
     @@id([articleId, categoryId])
 }
 
 model Comment {
-    id        Int      @id @default(autoincrement())
-    content   String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id              Int      @id @default(autoincrement())
+    content         String
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
 
-    articleId Int
-    userId    Int
+    articleId       Int
+    userId          Int
 
-    article   Article  @relation(fields: [articleId], references: [id])
-    user      User     @relation(fields: [userId], references: [id])
+    article         Article  @relation(fields: [articleId], references: [id])
+    user            User     @relation(fields: [userId], references: [id])
 }
 
 model Like {
-    id        Int      @id @default(autoincrement())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id              Int      @id @default(autoincrement())
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
 
-    articleId Int
-    userId    Int
+    articleId       Int
+    userId          Int
 
-    article   Article  @relation(fields: [articleId], references: [id])
-    user      User     @relation(fields: [userId], references: [id])
+    article         Article  @relation(fields: [articleId], references: [id])
+    user            User     @relation(fields: [userId], references: [id])
 }

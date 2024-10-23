@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
-import bcrypt
+from datetime import datetime, timedelta, timezone
+from typing import List, Optional, Dict, Any
 from jose import jwt
-from typing import List, Optional
+from passlib.context import CryptContext
+
 
 from resources.schemas.request import UserSignupRequest
 from resources.schemas.response import UserSchema, SignUpSchema
@@ -16,6 +17,8 @@ class UserService:
             "fca1c9a668eb97796fc628eac4ba85a50538279ee2f3a2816ebf3e67a0e6a026"
         )
         self.jwt_algorithm: str = "HS256"
+        self.token_expire_minutes = 30
+        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     async def get_users(self) -> List[UserSchema]:
         return await self.user_repository.get_users()
@@ -27,10 +30,11 @@ class UserService:
         return await self.user_repository.get_user_by_email(user_email)
 
     def hash_password(self, plain_password: str) -> str:
-        hashed_password: bytes = bcrypt.hashpw(
-            plain_password.encode(self.encoding),
-            salt=bcrypt.gensalt(),
-        )
+        # hashed_password: bytes = bcrypt.hashpw(
+        #     plain_password.encode(self.encoding),
+        #     salt=bcrypt.gensalt(),
+        # )
+        hashed_password = self.pwd_context.hash(plain_password)
         return hashed_password.decode(self.encoding)
 
     async def signup_user(self, request: UserSignupRequest) -> SignUpSchema:
@@ -40,36 +44,44 @@ class UserService:
         )
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return bcrypt.checkpw(
+        return self.pwd_context.verify(
             plain_password.encode(self.encoding),
             hashed_password.encode(self.encoding),
         )
 
-    def create_jwt(self, username: str) -> str:
+    def create_jwt(self, data: Dict[str, Any]) -> str:
+        to_encode = data.copy()
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=self.token_expire_minutes
+        )
+        to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
+        # iat = issued at
 
-        return jwt.encode(
-            {
-                "sub": username,  # 원래 유니크한 식별자를 받아야함
-                "exp": datetime.now()
-                + timedelta(days=1),  # 요청 현재 시각 에서+ 하루 유효
-            },
+        jwt_token: str = jwt.encode(
+            to_encode,
             self.secretkey,
             algorithm=self.jwt_algorithm,
         )
 
+        return jwt_token
+
     async def verify_credentials(
-        self, user_id: int, email: str, current_password: str
-    ) -> bool:
-        user = await self.get_user_by_id(user_id)
-        if not user or user.email != email:
-            return False
-        if not self.verify_password(current_password, user.hashed_password):
-            return False
+        self, email: str, password: str
+    ) -> Optional[UserSchema]:
 
-        return True
+        user: Optional[UserSchema] = await self.get_user_by_email(email)
+        if not user:
+            return None
+        if not self.verify_password(password, user.hashed_password):
+            return None
 
-    async def update_password(self, user_id: int, new_password: str):
+        return user
 
-        new_hashed_password = self.hash_password(new_password)
+    async def update_password(self, user_email: int, new_password: str) -> UserSchema:
 
-        return await self.user_repository.update_password(user_id, new_hashed_password)
+        new_hashed_password: str = self.hash_password(new_password)
+        updated_password: UserSchema = await self.user_repository.update_password(
+            user_email, new_hashed_password
+        )
+
+        return updated_password

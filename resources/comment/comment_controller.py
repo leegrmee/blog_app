@@ -2,7 +2,7 @@ from fastapi import APIRouter, status, Depends, Query, Body
 from typing import Optional
 from resources.schemas.request import CommentCreate
 
-router = APIRouter(prefix="/comments")
+router = APIRouter(prefix="/comments", tags=["Comments"])
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)

@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from resources.schemas.request import LikeCreate
 from resources.schemas.response import LikeResponse
 
-router = APIRouter(prefix="/likes")
+router = APIRouter(prefix="/likes", tags=["Likes"])
 
 
 @router.get("/{article_id}")

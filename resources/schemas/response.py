@@ -1,10 +1,12 @@
 from pydantic import BaseModel, ConfigDict
+from typing import List
 
 
 class UserSchema(BaseModel):
-    id: int
     username: str
     email: str
+    role: str
+    hashed_password: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -38,7 +40,6 @@ class AritcleListSchema(BaseModel):
 
 
 class LikeResponse(BaseModel):
-    user_id: int
     content_id: int
 
     model_config = ConfigDict(from_attributes=True)

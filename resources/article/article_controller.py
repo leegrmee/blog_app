@@ -2,7 +2,7 @@ from fastapi import APIRouter, status, Query
 from typing import Optional
 from resources.schemas.request import ArticleCreate, ArticleUpdate
 
-router = APIRouter(prefix="/articles")
+router = APIRouter(prefix="/articles", tags=["Articles"])
 
 
 @router.get("/", status_code=status.HTTP_200_OK)

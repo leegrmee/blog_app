@@ -15,7 +15,7 @@ class UserRepository:
 
     async def get_user_by_email(self, user_email: str) -> Optional[UserSchema]:
         # Mock implementation
-        return UserSchema(email=user_email, username=f"user_{user_email}")
+        return UserSchema
 
     async def create_user(
         self, username: str, email: str, hashed_password: str
@@ -24,10 +24,7 @@ class UserRepository:
         return SignUpSchema(id=1, username=username, email=email)
 
     async def update_password(
-        self, user_id: int, new_hashed_password: str
+        self, user_email: str, new_hashed_password: str
     ) -> UserSchema:
         # Mock implementation
-        updated_user = UserSchema(
-            id=user_id, username=f"user_{user_id}", email=f"user_{user_id}@example.com"
-        )
-        return updated_user
+        return UserSchema(email=user_email)

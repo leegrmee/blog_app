@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, Request, Depends, HTTPException
-from typing import List
+from typing import List, Optional
 
 from resources.user.user_service import UserService
 
@@ -11,7 +11,7 @@ from resources.schemas.request import (
 from resources.schemas.response import UserSchema, SignUpSchema, JWTResponse
 
 
-router = APIRouter(prefix="/users")
+router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=List[UserSchema])
@@ -38,7 +38,9 @@ async def user_signup_handler(
     request: UserSignupRequest,
     user_service: UserService = Depends(),
 ):
-    return await user_service.signup_user(request)
+    user: SignUpSchema = await user_service.signup_user(request)
+
+    return {"message": "User created successfully", "user_id": user.id}
 
 
 # 로그인
@@ -48,59 +50,57 @@ async def user_login_handler(
     user_service: UserService = Depends(),
 ):
 
-    user: UserSchema = await user_service.get_user_by_email(request.email)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email"
+    try:
+        verified_user: Optional[UserSchema] = await user_service.verify_credentials(
+            request.email, request.password
         )
 
-    verified_password: bool = user_service.verify_password(
-        plain_password=request.password,
-        hashed_password=user.hashed_password,
-    )
+        if not verified_user:
+            raise ValueError("Authentication failed")
 
-    if not verified_password:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password"
+        ##검토 필요
+        token: str = user_service.create_jwt(
+            {"user_email": verified_user.email, "role": verified_user.role}
         )
 
-    token: str = user_service.create_jwt(username=request.username)
+        return JWTResponse(access_token=token)
 
-    return JWTResponse(access_token=token)
+    except ValueError as exc:
+        # 일반적인 오류 메시지를 사용하여 구체적인 실패 이유를 숨깁니다
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
 
 
+##검토 필요
 # 로그아웃
 @router.post("/logout", status_code=status.HTTP_200_OK)
 async def user_logout_handler(request: Request):
 
-    request.session.pop("username", None)
+    # request.session.pop("username", None)
 
     return {"message": "Successfully logged out"}
 
 
-# 유저 정보 수정
-@router.put("/update/{user_id}", status_code=status.HTTP_200_OK)
+# 비밀번호 수정
+@router.put("/update}", status_code=status.HTTP_200_OK)
 async def password_update_handler(
     request: PasswordUpdateRequest,
-    user_id: int,
     user_service: UserService = Depends(),
 ):
-    user = await user_service.get_user_by_id(user_id)
-    if not user:
+
+    verified_user = await user_service.verify_credentials(
+        request.email, request.password
+    )
+    if not verified_user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
 
-        # verify email and pw
-    if not await user_service.verify_credentials(
-        user_id, request.email, request.current_password
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
-        )
-
-    updated_user = await user_service.update_password(
-        user_id=user_id, new_password=request.new_password
+    updated_user: UserSchema = await user_service.update_password(
+        user_email=request.email, new_password=request.new_password
     )
 
     return {"user": updated_user}

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body
 from typing import List
 
-router = APIRouter(prefix="/categories")
+router = APIRouter(prefix="/categories", tags=["Categories"])
 
 
 @router.get("/")
