@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
 
 # USER--------------
@@ -31,8 +32,21 @@ class ArticleUpdate(BaseModel):
     content: Optional[str]
 
 
+class ArticleSearch(BaseModel):
+    category_id: Optional[int] = None
+    user_id: Optional[int] = None
+    created_date: Optional[datetime] = None
+    updated_date: bool = False
+    skip: int = 0
+    limit: int = 10
+
+
 # COMMENT--------------
 class CommentCreate(BaseModel):
+    content: str
+
+
+class CommentUpdate(BaseModel):
     content: str
 
 

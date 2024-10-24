@@ -15,7 +15,7 @@ class UserRepository:
 
     async def get_user_by_email(self, user_email: str) -> Optional[UserSchema]:
         # Mock implementation
-        return UserSchema
+        return UserSchema(id=1, username="user_1", email=user_email)
 
     async def create_user(
         self, username: str, email: str, hashed_password: str
@@ -27,4 +27,4 @@ class UserRepository:
         self, user_email: str, new_hashed_password: str
     ) -> UserSchema:
         # Mock implementation
-        return UserSchema(email=user_email)
+        return UserSchema(id=1, username="user_1", email=user_email)

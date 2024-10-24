@@ -8,7 +8,7 @@ from resources.like.like_controller import router as like_router
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     # Startup
     print("Start Server")
     yield

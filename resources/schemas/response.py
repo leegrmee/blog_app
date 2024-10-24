@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
+from datetime import datetime
 
 
 class UserSchema(BaseModel):
@@ -27,9 +28,11 @@ class JWTResponse(BaseModel):
 
 class ArticleSchema(BaseModel):
     id: int
-    username: str
+    user_id: str
     title: str
     content: str
+    created_date: datetime
+    updated_date: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -40,8 +43,20 @@ class AritcleListSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CommentSchema(BaseModel):
+    id: int
+    user_id: int
+    article_id: int
+    content: str
+    created_date: datetime
+    updated_date: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class LikeResponse(BaseModel):
     content_id: int
+    created_date: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -53,6 +68,4 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    email: Optional[str] = None
     user_id: Optional[int] = None
-    role: Optional[str] = None

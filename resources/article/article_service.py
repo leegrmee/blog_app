@@ -1,69 +1,108 @@
-from prisma import Prisma
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from typing import List, Optional
-from pydantic import BaseModel
+from datetime import datetime
+
+from .article_repository import ArticleRepository
+from ..schemas.response import ArticleSchema
 
 
-class UserCreate(BaseModel):
-    name: str
-    email: str
-    password: str
+class ArticleService:
 
+    async def get_all_articles(self, user_id: int, skip: int, limit: int):
+        return await ArticleRepository.get_all_articles(
+            user_id=user_id, skip=skip, limit=limit
+        )
 
-class UserUpdate(BaseModel):
-    name: Optional[str] = None
-    email: Optional[str] = None
-    password: Optional[str] = None
+    async def get_article_by_articleid(self, article_id: int) -> ArticleSchema:
+        article = await ArticleRepository.get_article_by_articleid(
+            article_id=article_id
+        )
+        if article is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Article with id: {article_id} does not exist",
+        )
+        return article
 
+    async def search_articles(
+        self,
+        category_id: Optional[int] = None,
+        user_id: Optional[int] = None,
+        created_date: Optional[datetime] = None,
+        updated_date: bool = False,
+        skip: int = 0,
+        limit: int = 10,
+    ) -> List[ArticleSchema]:
+        
+        return await ArticleRepository.search_articles(
+            category_id=category_id,
+            user_id=user_id,
+            created_date=created_date,
+            updated_date=updated_date,
+            skip=skip,
+            limit=limit,
+        )
+    
 
-class UserService:
-    def __init__(self):
-        self.prisma = Prisma()
+    async def create_article(self, user_id: int, title: str, content: str):
 
-    async def create_user(self, user: UserCreate) -> dict:
-        await self.prisma.connect()
-        try:
-            new_user = await self.prisma.user.create({"data": user.dict()})
-            return new_user
-        finally:
-            await self.prisma.disconnect()
+        new_article = await ArticleRepository.create_article(
+            user_id=user_id, title=title, content=content
+        )
 
-    async def get_users(self) -> List[dict]:
-        await self.prisma.connect()
-        try:
-            users = await self.prisma.user.find_many()
-            return users
-        finally:
-            await self.prisma.disconnect()
+        return new_article
 
-    async def get_user(self, user_id: int) -> dict:
-        await self.prisma.connect()
-        try:
-            user = await self.prisma.user.find_unique(where={"id": user_id})
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
-            return user
-        finally:
-            await self.prisma.disconnect()
+    async def delete_article(self, article_id: int, user_id: int):
 
-    async def update_user(self, user_id: int, user: UserUpdate) -> dict:
-        await self.prisma.connect()
-        try:
-            updated_user = await self.prisma.user.update(
-                where={"id": user_id}, data=user.dict(exclude_unset=True)
+        article = await ArticleRepository.get_article_by_articleid(
+            article_id=article_id
+        )
+        if article == None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Article with id: {article_id} does not exist",
             )
-            if not updated_user:
-                raise HTTPException(status_code=404, detail="User not found")
-            return updated_user
-        finally:
-            await self.prisma.disconnect()
 
-    async def delete_user(self, user_id: int) -> dict:
-        await self.prisma.connect()
-        try:
-            deleted_user = await self.prisma.user.delete(where={"id": user_id})
-            if not deleted_user:
-                raise HTTPException(status_code=404, detail="User not found")
-            return deleted_user
-        finally:
-            await self.prisma.disconnect()
+        if article.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to perform requested action",
+            )
+        # 게시물 삭제
+        deleted_count = await ArticleRepository.delete_article(article_id)
+
+        if deleted_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Article with id: {article_id} could not be deleted",
+            )
+
+        return {"message": f"Article of {article_id} deleted"}
+
+    async def update_article(
+        self,
+        article_id: int,
+        user_id: int,
+        new_title: Optional[str],
+        new_content: Optional[str],
+    ) -> ArticleSchema:
+
+        article = await ArticleRepository.get_article_by_articleid(
+            article_id=article_id
+        )
+        if article is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Article with id: {article_id} does not exist",
+            )
+        if article.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to perform requested action",
+            )
+
+        updated_article = await ArticleRepository.update_article(
+            article_id=article_id, new_title=new_title, new_content=new_content
+        )
+
+        return updated_article

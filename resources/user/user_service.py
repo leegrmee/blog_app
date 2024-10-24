@@ -2,6 +2,8 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 from jose import jwt, JWTError
 from passlib.context import CryptContext
+from fastapi import Depends, status, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 
 
 from resources.schemas.request import UserSignupRequest
@@ -9,9 +11,11 @@ from resources.schemas.response import UserSchema, SignUpSchema, TokenData
 from resources.user.user_repository import UserRepository
 
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+
 class UserService:
     def __init__(self):
-        self.user_repository = UserRepository()
         self.encoding: str = "UTF-8"
         self.secretkey: str = (
             "fca1c9a668eb97796fc628eac4ba85a50538279ee2f3a2816ebf3e67a0e6a026"
@@ -21,13 +25,13 @@ class UserService:
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     async def get_users(self) -> List[UserSchema]:
-        return await self.user_repository.get_users()
+        return await UserRepository.get_users()
 
     async def get_user_by_id(self, user_id: int) -> Optional[UserSchema]:
-        return await self.user_repository.get_user_by_id(user_id)
+        return await UserRepository.get_user_by_id(user_id)
 
     async def get_user_by_email(self, user_email: str) -> Optional[UserSchema]:
-        return await self.user_repository.get_user_by_email(user_email)
+        return await UserRepository.get_user_by_email(user_email)
 
     def hash_password(self, plain_password: str) -> str:
         # hashed_password: bytes = bcrypt.hashpw(
@@ -39,7 +43,7 @@ class UserService:
 
     async def signup_user(self, request: UserSignupRequest) -> SignUpSchema:
         hashed_password = self.hash_password(request.password)
-        return await self.user_repository.create_user(
+        return await UserRepository.create_user(
             request.username, request.email, hashed_password
         )
 
@@ -65,26 +69,40 @@ class UserService:
 
         return jwt_token
 
-    async def verify_access_token(self, token: str, credentials_exception) -> int:
+    async def verify_access_token(self, token: str, credentials_exception) -> TokenData:
 
         try:
             payload = jwt.decode(token, self.secretkey, algorithms=[self.jwt_algorithm])
             user_id: int = payload.get("user_id")
+
             if user_id is None:
                 raise credentials_exception
 
-            token_data = TokenData(user_id=user_id)
+            user_id = TokenData(user_id=user_id)
 
         except JWTError:
             raise credentials_exception
 
-        return token_data
+        return user_id
 
-    async def update_password(self, user_email: int, new_password: str) -> UserSchema:
-
-        new_hashed_password: str = self.hash_password(new_password)
-        updated_password: UserSchema = await self.user_repository.update_password(
-            user_email, new_hashed_password
+    async def logged_in_user(self, token: str = Depends(oauth2_scheme)) -> UserSchema:
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-        return updated_password
+        token_data = await self.verify_access_token(token, credentials_exception)
+        user = await UserRepository.get_user_by_id(token_data.user_id)
+        if user is None:
+            raise credentials_exception
+
+        return user
+
+    async def update_password(self, email: str, new_password: str) -> UserSchema:
+        new_hashed_password: str = self.hash_password(new_password)
+        updated_password: UserSchema = await UserRepository.update_password(
+            user_email=email, new_hashed_password=new_hashed_password
+        )
+
+        return UserSchema(email=email)
