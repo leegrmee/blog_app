@@ -3,6 +3,9 @@ from resources.schemas.response import UserSchema, SignUpSchema
 
 
 class UserRepository:
+    def __init__(self):
+        pass
+
     async def get_users(self) -> List[UserSchema]:
         # Mock implementation
         return []

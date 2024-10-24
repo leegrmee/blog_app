@@ -7,21 +7,23 @@ from ..schemas.response import ArticleSchema
 
 
 class ArticleService:
+    def __init__(self):
+        self.article_repository = ArticleRepository()
 
     async def get_all_articles(self, user_id: int, skip: int, limit: int):
-        return await ArticleRepository.get_all_articles(
+        return await self.article_repository.get_all_articles(
             user_id=user_id, skip=skip, limit=limit
         )
 
     async def get_article_by_articleid(self, article_id: int) -> ArticleSchema:
-        article = await ArticleRepository.get_article_by_articleid(
+        article = await self.article_repository.get_article_by_articleid(
             article_id=article_id
         )
         if article is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Article with id: {article_id} does not exist",
-        )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Article with id: {article_id} does not exist",
+            )
         return article
 
     async def search_articles(
@@ -33,8 +35,8 @@ class ArticleService:
         skip: int = 0,
         limit: int = 10,
     ) -> List[ArticleSchema]:
-        
-        return await ArticleRepository.search_articles(
+
+        return await self.article_repository.search_articles(
             category_id=category_id,
             user_id=user_id,
             created_date=created_date,
@@ -42,11 +44,10 @@ class ArticleService:
             skip=skip,
             limit=limit,
         )
-    
 
     async def create_article(self, user_id: int, title: str, content: str):
 
-        new_article = await ArticleRepository.create_article(
+        new_article = await self.article_repository.create_article(
             user_id=user_id, title=title, content=content
         )
 
@@ -54,7 +55,7 @@ class ArticleService:
 
     async def delete_article(self, article_id: int, user_id: int):
 
-        article = await ArticleRepository.get_article_by_articleid(
+        article = await self.article_repository.get_article_by_articleid(
             article_id=article_id
         )
         if article == None:
@@ -69,7 +70,7 @@ class ArticleService:
                 detail="Not authorized to perform requested action",
             )
         # 게시물 삭제
-        deleted_count = await ArticleRepository.delete_article(article_id)
+        deleted_count = await self.article_repository.delete_article(article_id)
 
         if deleted_count == 0:
             raise HTTPException(
@@ -87,7 +88,7 @@ class ArticleService:
         new_content: Optional[str],
     ) -> ArticleSchema:
 
-        article = await ArticleRepository.get_article_by_articleid(
+        article = await self.article_repository.get_article_by_articleid(
             article_id=article_id
         )
         if article is None:
@@ -101,7 +102,7 @@ class ArticleService:
                 detail="Not authorized to perform requested action",
             )
 
-        updated_article = await ArticleRepository.update_article(
+        updated_article = await self.article_repository.update_article(
             article_id=article_id, new_title=new_title, new_content=new_content
         )
 

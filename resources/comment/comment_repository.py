@@ -2,9 +2,11 @@ from typing import List, Optional
 
 
 class CommentRepository:
+    def __init__(self):
+        pass
 
-    @staticmethod
     async def get_comments(
+        self,
         comment_id: Optional[int] = None,
         article_id: Optional[int] = None,
         user_id: Optional[int] = None,
@@ -13,20 +15,17 @@ class CommentRepository:
         # Use Prisma client to fetch comments based on filters
         return []
 
-    @staticmethod
-    async def create_comment(user_id: int, article_id: int, content: str) -> dict:
+    async def create_comment(self, user_id: int, article_id: int, content: str) -> dict:
         # Placeholder for database insert logic
         # Use Prisma client to create a new comment
         return {}
 
-    @staticmethod
-    async def update_comment(user_id: int, comment_id: int, content: str) -> dict:
+    async def update_comment(self, user_id: int, comment_id: int, content: str) -> dict:
         # Placeholder for database update logic
         # Use Prisma client to update the comment
         return {}
 
-    @staticmethod
-    async def delete_comment(user_id: int, comment_id: int) -> None:
+    async def delete_comment(self, user_id: int, comment_id: int) -> None:
         # Placeholder for database delete logic
         # Use Prisma client to delete the comment
         pass
