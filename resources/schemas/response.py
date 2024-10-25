@@ -31,6 +31,7 @@ class ArticleSchema(BaseModel):
     user_id: str
     title: str
     content: str
+    views: int
     created_date: datetime
     updated_date: datetime
 
@@ -50,13 +51,6 @@ class CommentSchema(BaseModel):
     content: str
     created_date: datetime
     updated_date: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class LikeResponse(BaseModel):
-    content_id: int
-    created_date: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

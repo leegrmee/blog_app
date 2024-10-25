@@ -4,11 +4,11 @@ from ..schemas.response import ArticleSchema
 
 
 class ArticleRepository:
-    def __init__(self):
+    async def __init__(self):
         # Prisma 클라이언트 초기화 로직
         pass
 
-    def get_all_articles(
+    async def get_all_articles(
         self, user_id: int, skip: int, limit: int
     ) -> List[ArticleSchema]:
         # 모든 게시물 반환
@@ -22,11 +22,31 @@ class ArticleRepository:
         # return [ArticleSchema.from_orm(article) for article in articles]
         return {"articles": []}
 
-    def get_article_by_articleid(self, article_id: int) -> Optional[ArticleSchema]:
+    async def get_article_by_articleid(
+        self, article_id: int
+    ) -> Optional[ArticleSchema]:
         # Prisma 로직 구현 필요
+        # article = await self.prisma.article.find_unique(
+        #     where={"id": article_id}, include={"user": True}
+        # )
+        # if article:
+        #     return ArticleSchema.model_validate(article)
         return None
 
-    def search_articles(
+    async def increment_views(self, article_id: int) -> Optional[ArticleSchema]:
+        pass
+        # Prisma를 사용하여 조회수 증가
+        # updated_article = self.prisma.article.update(
+        #     where={"id": article_id},
+        #     data={"views": {"increment": 1}},
+        #     include={"user": True},
+        # )
+        # if updated_article:
+        #     return ArticleSchema.model_validate(updated_article)
+
+        # {"increment": 1}= UPDATE Article SET views = views + 1 WHERE id = :article_id
+
+    async def search_articles(
         self,
         category_id: Optional[int] = None,
         user_id: Optional[int] = None,
@@ -41,7 +61,9 @@ class ArticleRepository:
         # return ArticleSchema.from_orm(article) if article else None
         return []
 
-    def create_article(self, user_id: int, title: str, content: str) -> ArticleSchema:
+    async def create_article(
+        self, user_id: int, title: str, content: str
+    ) -> ArticleSchema:
 
         # Prisma를 사용하여 새 게시물 생성
         # ex:
@@ -56,7 +78,7 @@ class ArticleRepository:
 
         return {"user_id": user_id, "title": title, "content": content}
 
-    def delete_article(self, article_id: int):
+    async def delete_article(self, article_id: int):
 
         # Prisma를 사용하여 게시물 수정
         # ex
@@ -72,7 +94,7 @@ class ArticleRepository:
         # return ArticleSchema.from_orm(updated_article)
         return 1
 
-    def update_article(
+    async def update_article(
         self, article_id: int, new_title: str, new_content: str
     ) -> ArticleSchema:
 

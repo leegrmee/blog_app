@@ -24,7 +24,17 @@ class ArticleService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Article with id: {article_id} does not exist",
             )
-        return article
+        # 특정 게시물을 조회 할 때 조회수 증가
+        updated_article = await self.article_repository.increment_views(
+            article_id=article_id
+        )
+        if updated_article is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update view count",
+            )
+
+        return updated_article
 
     async def search_articles(
         self,

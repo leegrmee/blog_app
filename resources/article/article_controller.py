@@ -23,14 +23,16 @@ async def get_articles_handler(
     )
 
 
-# 게시물 id 조회
+# 게시물 id로 조회
 @router.get("/{article_id}", status_code=status.HTTP_200_OK)
 async def get_article_handler(
     article_id: int,
     article_service: ArticleService = Depends(),
     current_user: UserSchema = Depends(AuthService.logged_in_user),
 ) -> ArticleSchema:
-    return await article_service.get_article_by_articleid(article_id=article_id)
+    article = await article_service.get_article_by_articleid(article_id=article_id)
+
+    return article
 
 
 # 게시물 검색
@@ -43,9 +45,8 @@ async def search_articles_handler(
     return await article_service.search_articles(
         category_id=search_params.category_id,
         user_id=search_params.user_id,
-        start_date=search_params.start_date,
-        end_date=search_params.end_date,
-        is_update_date=search_params.is_update_date,
+        created_date=search_params.created_date,
+        updated_date=search_params.updated_date,
         skip=search_params.skip,
         limit=search_params.limit,
     )
