@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from typing import List, Optional
 from datetime import datetime
 
+from resources.category.category_repository import CategoryRepository
 from .article_repository import ArticleRepository
 from ..schemas.response import ArticleSchema
 
@@ -9,6 +10,7 @@ from ..schemas.response import ArticleSchema
 class ArticleService:
     def __init__(self):
         self.article_repository = ArticleRepository()
+        self.category_repository = CategoryRepository()
 
     async def get_all_articles(self, user_id: int, skip: int, limit: int):
         return await self.article_repository.get_all_articles(
@@ -55,11 +57,20 @@ class ArticleService:
             limit=limit,
         )
 
-    async def create_article(self, user_id: int, title: str, content: str):
+    async def create_article(
+        self, user_id: int, title: str, content: str, category_ids=list
+    ):
 
         new_article = await self.article_repository.create_article(
-            user_id=user_id, title=title, content=content
+            user_id=user_id,
+            title=title,
+            content=content,
         )
+
+        if category_ids:
+            await self.category_repository.update_article_categories(
+                article_id=new_article.id, category_ids=category_ids
+            )
 
         return new_article
 

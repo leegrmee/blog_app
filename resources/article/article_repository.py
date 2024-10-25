@@ -67,14 +67,14 @@ class ArticleRepository:
 
         # Prisma를 사용하여 새 게시물 생성
         # ex:
-        # new_article = await self.prisma.article.create(
-        #     data={
-        #         "user_id": user_id,
-        #         "title": title,
-        #         "content": content
-        #     }
-        # )
-        # return ArticleSchema.from_orm(new_article)
+        new_article = await self.prisma.article.create(
+            data={
+                "user_id": user_id,
+                "title": title,
+                "content": content,
+            }
+        )
+        return ArticleSchema.model_validate(new_article)
 
         return {"user_id": user_id, "title": title, "content": content}
 

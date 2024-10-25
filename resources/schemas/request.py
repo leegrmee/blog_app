@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, conint
-from typing import Optional, Annotated
+from typing import Optional, Annotated, List
 from datetime import datetime
 
 
@@ -25,6 +25,7 @@ class PasswordUpdateRequest(BaseModel):
 class ArticleCreate(BaseModel):
     title: str
     content: str
+    select_categories: List[int]
 
 
 class ArticleUpdate(BaseModel):

@@ -61,13 +61,13 @@ async def create_article_handler(
 ):
 
     new_article = await article_service.create_article(
-        user_id=current_user.id, title=article.title, content=article.content
+        user_id=current_user.id,
+        title=article.title,
+        content=article.content,
+        cateogry_ids=article.select_categories,
     )
 
     return {"article": {new_article}}
-
-
-router.get("/{article_id}", status_code=status.HTTP_200_OK)
 
 
 # 게시물 수정
