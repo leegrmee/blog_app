@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field, conint
+from typing import Optional, Annotated
 from datetime import datetime
 
 
@@ -52,5 +52,6 @@ class CommentUpdate(BaseModel):
 
 # LIKE--------------
 class LikeCreate(BaseModel):
-    user_id: int
-    content_id: int
+    article_id: int
+    dir: Annotated[int, Field(ge=0, le=1)]
+    # conint function is meant to be used as a field validator
