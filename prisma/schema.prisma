@@ -59,7 +59,6 @@ model Comment {
 }
 
 model Like {
-    id              Int      @id @default(autoincrement())
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
 
@@ -68,4 +67,6 @@ model Like {
 
     article         Article  @relation(fields: [articleId], references: [id])
     user            User     @relation(fields: [userId], references: [id])
+
+    @@id([articleId, userId])
 }
