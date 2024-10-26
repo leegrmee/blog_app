@@ -1,72 +1,75 @@
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime
-from ..schemas.response import ArticleSchema
+from ..schemas.response import ArticleResponse
+from config.Connection import prisma_connection
 
 
 class ArticleRepository:
-    async def __init__(self):
-        # Prisma 클라이언트 초기화 로직
-        pass
+    def __init__(self):
+        self.prisma = prisma_connection.connect()
 
     async def get_all_articles(
         self, user_id: int, skip: int, limit: int
-    ) -> List[ArticleSchema]:
-        # 모든 게시물 반환
-        # ex)
-        # articles = await self.prisma.article.find_many(
-        #     where={"user_id": user_id},
-        #     skip=skip,
-        #     take=limit,
-        #     order={"created_at": "desc"}
-        # )
-        # return [ArticleSchema.from_orm(article) for article in articles]
-        return {"articles": []}
+    ) -> list[ArticleResponse]:
 
-    async def get_article_by_articleid(
-        self, article_id: int
-    ) -> Optional[ArticleSchema]:
-        # Prisma 로직 구현 필요
-        # article = await self.prisma.article.find_unique(
-        #     where={"id": article_id}, include={"user": True}
-        # )
-        # if article:
-        #     return ArticleSchema.model_validate(article)
-        return None
+        articles = await self.prisma.article.find_many(
+            where={"user_id": user_id},
+            skip=skip,
+            take=limit,
+            order={"created_at": "desc"},
+        )
+        return [ArticleResponse.model_validate(article) for article in articles]
 
-    async def increment_views(self, article_id: int) -> Optional[ArticleSchema]:
-        pass
-        # Prisma를 사용하여 조회수 증가
-        # updated_article = self.prisma.article.update(
-        #     where={"id": article_id},
-        #     data={"views": {"increment": 1}},
-        #     include={"user": True},
-        # )
-        # if updated_article:
-        #     return ArticleSchema.model_validate(updated_article)
+    async def get_article_by_articleid(self, article_id: int) -> ArticleResponse | None:
 
-        # {"increment": 1}= UPDATE Article SET views = views + 1 WHERE id = :article_id
+        article = await self.prisma.article.find_unique(
+            where={"id": article_id}, include={"user": True}
+        )
+        if article:
+            return ArticleResponse.model_validate(article)
+
+    async def increment_views(self, article_id: int) -> ArticleResponse | None:
+        updated_article = await self.prisma.article.update(
+            where={"id": article_id},
+            data={
+                "views": {"increment": 1}
+            },  # {"increment": 1}= UPDATE Article SET views = views + 1 WHERE id = :article_id
+            include={"user": True},
+        )
+        if updated_article:
+            return ArticleResponse.model_validate(updated_article)
 
     async def search_articles(
         self,
         category_id: Optional[int] = None,
         user_id: Optional[int] = None,
         created_date: Optional[datetime] = None,
-        updated_date: bool = False,
+        updated_date: Optional[datetime] = None,
         skip: int = 0,
         limit: int = 10,
-    ) -> List[ArticleSchema]:
-        # # Prisma를 사용하여 특정 게시물 반환
-        # ex:
-        # article = await self.prisma.article.find_unique(where={"id": article_id})
-        # return ArticleSchema.from_orm(article) if article else None
-        return []
+    ) -> list[ArticleResponse]:
+
+        # Construct the filter conditions
+        filters = {}
+        if category_id is not None:
+            filters["category_id"] = category_id
+        if user_id is not None:
+            filters["user_id"] = user_id
+        if created_date is not None:
+            filters["created_date"] = created_date
+        if updated_date:
+            filters["updated_date"] = updated_date
+
+        # Use find_many with the constructed filters
+        articles = await self.prisma.article.find_many(
+            where=filters, skip=skip, take=limit
+        )
+        return [ArticleResponse.model_validate(article) for article in articles]
 
     async def create_article(
         self, user_id: int, title: str, content: str
-    ) -> ArticleSchema:
+    ) -> ArticleResponse:
 
-        # Prisma를 사용하여 새 게시물 생성
-        # ex:
         new_article = await self.prisma.article.create(
             data={
                 "user_id": user_id,
@@ -74,40 +77,26 @@ class ArticleRepository:
                 "content": content,
             }
         )
-        return ArticleSchema.model_validate(new_article)
-
-        return {"user_id": user_id, "title": title, "content": content}
+        return ArticleResponse.model_validate(new_article)
 
     async def delete_article(self, article_id: int):
-
-        # Prisma를 사용하여 게시물 수정
-        # ex
-        # update_data = {}
-        # if new_title is not None:
-        #     update_data["title"] = new_title
-        # if new_content is not None:
-        #     update_data["content"] = new_content
-        # updated_article = await self.prisma.article.update(
-        #     where={"id": article_id},
-        #     data=update_data
-        # )
-        # return ArticleSchema.from_orm(updated_article)
-        return 1
+        article = await self.prisma.article.find_unique(where={"id": article_id})
+        if not article:
+            return None
+        return await self.prisma.article.delete(where={"id": article_id})
 
     async def update_article(
         self, article_id: int, new_title: str, new_content: str
-    ) -> ArticleSchema:
+    ) -> ArticleResponse:
 
-        # Prisma를 사용하여 게시물 수정
-        # ex:
-        # update_data = {}
-        # if new_title is not None:
-        #     update_data["title"] = new_title
-        # if new_content is not None:
-        #     update_data["content"] = new_content
-        # updated_article = await self.prisma.article.update(
-        #     where={"id": article_id},
-        #     data=update_data
-        # )
-        # return ArticleSchema.from_orm(updated_article)
-        return ArticleSchema(id=article_id, title=new_title, content=new_content)
+        article = await self.prisma.article.find_unique(where={"id": article_id})
+
+        update_data = {}
+        if new_title is not None:
+            update_data["title"] = new_title
+        if new_content is not None:
+            update_data["content"] = new_content
+        updated_article = await self.prisma.article.update(
+            where={"id": article.id}, data=update_data
+        )
+        return ArticleResponse.model_validate(updated_article)

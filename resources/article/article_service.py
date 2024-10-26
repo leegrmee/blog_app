@@ -1,10 +1,9 @@
 from fastapi import HTTPException, status
-from typing import List, Optional
 from datetime import datetime
 
 from resources.category.category_repository import CategoryRepository
 from .article_repository import ArticleRepository
-from ..schemas.response import ArticleSchema
+from ..schemas.response import ArticleResponse
 
 
 class ArticleService:
@@ -12,12 +11,14 @@ class ArticleService:
         self.article_repository = ArticleRepository()
         self.category_repository = CategoryRepository()
 
-    async def get_all_articles(self, user_id: int, skip: int, limit: int):
+    async def get_all_articles(
+        self, user_id: int, skip: int, limit: int
+    ) -> list[ArticleResponse]:
         return await self.article_repository.get_all_articles(
             user_id=user_id, skip=skip, limit=limit
         )
 
-    async def get_article_by_articleid(self, article_id: int) -> ArticleSchema:
+    async def get_article_by_articleid(self, article_id: int) -> ArticleResponse:
         article = await self.article_repository.get_article_by_articleid(
             article_id=article_id
         )
@@ -40,15 +41,15 @@ class ArticleService:
 
     async def search_articles(
         self,
-        category_id: Optional[int] = None,
-        user_id: Optional[int] = None,
-        created_date: Optional[datetime] = None,
-        updated_date: bool = False,
+        category_id: int | None,
+        user_id: int | None,
+        created_date: datetime | None,
+        updated_date: datetime | None,
         skip: int = 0,
         limit: int = 10,
-    ) -> List[ArticleSchema]:
+    ) -> list[ArticleResponse]:
 
-        return await self.article_repository.search_articles(
+        result = await self.article_repository.search_articles(
             category_id=category_id,
             user_id=user_id,
             created_date=created_date,
@@ -57,9 +58,11 @@ class ArticleService:
             limit=limit,
         )
 
+        return result
+
     async def create_article(
-        self, user_id: int, title: str, content: str, category_ids=list
-    ):
+        self, user_id: int, title: str, content: str, category_ids: list[int]
+    ) -> ArticleResponse:
 
         new_article = await self.article_repository.create_article(
             user_id=user_id,
@@ -105,9 +108,9 @@ class ArticleService:
         self,
         article_id: int,
         user_id: int,
-        new_title: Optional[str],
-        new_content: Optional[str],
-    ) -> ArticleSchema:
+        new_title: str | None,
+        new_content: str | None,
+    ) -> ArticleResponse:
 
         article = await self.article_repository.get_article_by_articleid(
             article_id=article_id

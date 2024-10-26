@@ -28,7 +28,7 @@ class LikeService:
                     detail=f"user {user_id} has alredy liked post {article_id}",
                 )
 
-            new_like = await self.like_repository.create_like(
+            await self.like_repository.create_like(
                 article_id=article_id, user_id=user_id
             )
             return {"message": "successfully added like"}

@@ -17,12 +17,8 @@ class CommentService:
             comment_id=comment_id, article_id=article_id, user_id=user_id
         )
 
-        if comment_id is not None:
-            return {"comment": comments[0] if comments else {}}
-        elif article_id is not None:
-            return {"comments": comments}
-        elif user_id is not None:
-            return {"comments": comments}
+        if comment_id:
+            return {"comment": comments[0] if comments else None}
         else:
             return {"comments": comments}
 

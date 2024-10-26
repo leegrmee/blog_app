@@ -3,7 +3,7 @@ from typing import Optional
 
 from resources.auth.auth_utils import verify_password
 from resources.schemas.request import UserLoginRequest, PasswordUpdateRequest
-from resources.schemas.response import JWTResponse, UserSchema
+from resources.schemas.response import JWTResponse, UserResponse
 from resources.user.user_service import UserService
 from resources.auth.auth_service import AuthService
 
@@ -18,7 +18,7 @@ async def user_login_handler(
     auth_service: AuthService = Depends(),
 ):
 
-    user: Optional[UserSchema] = await user_service.get_user_by_email(request.email)
+    user: Optional[UserResponse] = await user_service.get_user_by_email(request.email)
 
     if not user:
         raise HTTPException(
@@ -45,7 +45,7 @@ and ensuring that the user is authenticated and authorized to make such changes.
 async def password_update_handler(
     request: PasswordUpdateRequest = Body(...),
     user_service: UserService = Depends(),
-    current_user: UserSchema = Depends(AuthService.logged_in_user),
+    current_user: UserResponse = Depends(AuthService.logged_in_user),
 ):
     if current_user.email != request.email:
         raise HTTPException(
@@ -57,7 +57,7 @@ async def password_update_handler(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
         )
 
-    updated_user: UserSchema = await user_service.update_password(
+    updated_user: UserResponse = await user_service.update_password(
         email=current_user.email, new_password=request.new_password
     )
 

@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, conint
-from typing import Optional, Annotated, List
+from pydantic import BaseModel, Field
+from typing import Optional
 from datetime import datetime
 
 
@@ -25,7 +25,7 @@ class PasswordUpdateRequest(BaseModel):
 class ArticleCreate(BaseModel):
     title: str
     content: str
-    select_categories: List[int]
+    select_categories: list[int]
 
 
 class ArticleUpdate(BaseModel):
@@ -37,7 +37,7 @@ class ArticleSearch(BaseModel):
     category_id: Optional[int] = None
     user_id: Optional[int] = None
     created_date: Optional[datetime] = None
-    updated_date: bool = False
+    updated_date: Optional[datetime] = None
     skip: int = 0
     limit: int = 10
 
@@ -54,5 +54,4 @@ class CommentUpdate(BaseModel):
 # LIKE--------------
 class LikeCreate(BaseModel):
     article_id: int
-    dir: Annotated[int, Field(ge=0, le=1)]
-    # conint function is meant to be used as a field validator
+    dir: int = Field(ge=0, le=1)

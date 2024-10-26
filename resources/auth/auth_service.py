@@ -6,7 +6,7 @@ from typing import Dict, Any
 from passlib.context import CryptContext
 
 from resources.user.user_repository import UserRepository
-from resources.schemas.response import TokenData, UserSchema
+from resources.schemas.response import TokenData, UserResponse
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -54,7 +54,7 @@ class AuthService:
 
         return user_id
 
-    async def logged_in_user(self, token: str = Depends(oauth2_scheme)) -> UserSchema:
+    async def logged_in_user(self, token: str = Depends(oauth2_scheme)) -> UserResponse:
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",

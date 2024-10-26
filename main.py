@@ -6,15 +6,18 @@ from resources.category.category_controller import router as category_router
 from resources.comment.comment_controller import router as comment_router
 from resources.like.like_controller import router as like_router
 from resources.auth.auth_controller import router as auth_router
+from config.Connection import prisma_connection
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     # Startup
     print("Start Server")
+    await prisma_connection.connect()
     yield
     # Shutdown
     print("Shutdown Server")
+    await prisma_connection.disconnect()
 
 
 app = FastAPI(lifespan=lifespan)

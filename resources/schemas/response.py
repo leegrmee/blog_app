@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import datetime
 
 
-class UserSchema(BaseModel):
+class UserResponse(BaseModel):
     id: int
     username: str
     email: str
@@ -13,7 +13,7 @@ class UserSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class SignUpSchema(BaseModel):
+class SignUpResponse(BaseModel):
     id: int
     username: str
     email: str
@@ -26,7 +26,17 @@ class JWTResponse(BaseModel):
     access_token: str
 
 
-class ArticleSchema(BaseModel):
+# TOKEN-------------
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    user_id: Optional[int] = None
+
+
+class ArticleResponse(BaseModel):
     id: int
     user_id: str
     title: str
@@ -38,13 +48,7 @@ class ArticleSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class AritcleListSchema(BaseModel):
-    articles: List[ArticleSchema]
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class CommentSchema(BaseModel):
+class CommentResponse(BaseModel):
     id: int
     user_id: int
     article_id: int
@@ -55,11 +59,16 @@ class CommentSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# TOKEN-------------
-class Token(BaseModel):
-    access_token: str
-    token_type: str
+class CategoryResponse(BaseModel):
+    id: int
+    name: str
+    articles: list[ArticleResponse]
+
+    model_config = ConfigDict(from_attributes=True)
 
 
-class TokenData(BaseModel):
-    user_id: Optional[int] = None
+class LikeResponse(BaseModel):
+    user_id: int
+    article_id: int
+
+    model_config = ConfigDict(from_attributes=True)
