@@ -38,6 +38,4 @@ async def user_signup_handler(
     request: UserSignupRequest,
     user_service: UserService = Depends(),
 ):
-    user: SignUpResponse = await user_service.signup_user(request)
-
-    return {"message": "User created successfully", "user_id": user.id}
+    return await user_service.signup_user(request)

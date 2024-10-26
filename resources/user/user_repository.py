@@ -5,7 +5,7 @@ from config.Connection import prisma_connection
 
 class UserRepository:
     def __init__(self):
-        self.prisma = prisma_connection.prisma.prisma
+        self.prisma = prisma_connection.prisma
 
     async def get_users(self) -> list[UserResponse]:
         users = await self.prisma.user.find_many()

@@ -28,6 +28,7 @@ class UserService:
         return await self.user_repository.get_user_by_email(user_email=user_email)
 
     async def signup_user(self, request: UserSignupRequest) -> SignUpResponse:
+
         hashed_password = hash_password(request.password)
         return await self.user_repository.create_user(
             username=request.username,

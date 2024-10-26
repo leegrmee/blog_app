@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, Depends
 from resources.schemas.request import LikeCreate
 from resources.schemas.response import UserResponse
-from resources.auth.auth_service import AuthService
+from resources.auth.auth_service import get_current_user
 from resources.like.like_service import LikeService
 
 router = APIRouter(prefix="/likes", tags=["Likes"])
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/likes", tags=["Likes"])
 async def like_handler(
     like: LikeCreate,
     like_service: LikeService = Depends(),
-    current_user: UserResponse = Depends(AuthService.logged_in_user),
+    current_user: UserResponse = Depends(get_current_user),
 ):
 
     await like_service.like(

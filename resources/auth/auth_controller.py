@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status, Depends, HTTPException, Body
 from typing import Optional
-
+from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from resources.auth.auth_utils import verify_password
 from resources.schemas.request import UserLoginRequest, PasswordUpdateRequest
 from resources.schemas.response import JWTResponse, UserResponse
@@ -13,19 +13,22 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 # 로그인
 @router.post("/login", status_code=status.HTTP_200_OK)
 async def user_login_handler(
-    request: UserLoginRequest = Body(...),
     user_service: UserService = Depends(),
     auth_service: AuthService = Depends(),
+    user_credentials: OAuth2PasswordRequestForm = Depends(),
 ):
 
-    user: Optional[UserResponse] = await user_service.get_user_by_email(request.email)
+    user: Optional[UserResponse] = await user_service.get_user_by_email(
+        user_credentials.username
+    )
+    # Oauth2 에서 제공하는 username 은 email 임
 
     if not user:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
         )
 
-    if not verify_password(request.password, user.hashed_password):
+    if not verify_password(user_credentials.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
         )

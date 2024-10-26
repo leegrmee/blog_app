@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from resources.user.user_repository import UserRepository
 from resources.schemas.response import TokenData, UserResponse
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 class AuthService:
@@ -54,6 +54,7 @@ class AuthService:
 
         return user_id
 
+    @staticmethod
     async def logged_in_user(self, token: str = Depends(oauth2_scheme)) -> UserResponse:
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -67,3 +68,12 @@ class AuthService:
             raise credentials_exception
 
         return user
+
+
+# 전역 인스턴스 생성
+auth_service = AuthService()
+
+
+# 의존성 함수 정의
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
+    return await auth_service.get_current_user(token)
