@@ -1,9 +1,9 @@
 from fastapi import APIRouter, status, Depends, HTTPException, Body
-from typing import Optional
+import logging
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from resources.auth.auth_utils import verify_password
 from resources.schemas.request import UserLoginRequest, PasswordUpdateRequest
-from resources.schemas.response import JWTResponse, UserResponse
+from resources.schemas.response import JWTResponse, UserResponse, User
 from resources.user.user_service import UserService
 from resources.auth.auth_service import get_current_user, auth_service
 
@@ -17,7 +17,7 @@ async def user_login_handler(
     user_credentials: OAuth2PasswordRequestForm = Depends(),
 ):
 
-    user = await user_service.get_user_by_email(user_credentials.username)
+    user: User | None = await user_service.get_user_by_email(user_credentials.username)
     # user_credentials.username - Oauth2 에서 제공하는 username 은 email 임
 
     if not user:
@@ -29,6 +29,9 @@ async def user_login_handler(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
         )
+
+    token_data = {"user_email": user.email}
+    logging.info(f"Creating token with data: {token_data}")
 
     token: str = auth_service.create_access_token({"user_email": user.email})
 
@@ -45,7 +48,7 @@ and ensuring that the user is authenticated and authorized to make such changes.
 async def password_update_handler(
     request: PasswordUpdateRequest,
     user_service: UserService = Depends(),
-    current_user: UserResponse = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user),
 ):
     if current_user.email != request.email:
         raise HTTPException(

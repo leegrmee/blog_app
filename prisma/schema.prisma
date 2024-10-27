@@ -50,7 +50,7 @@ model CategoryToArticle {
     articleId       Int
     categoryId      Int
 
-    article         Article  @relation(fields: [articleId], references: [id])
+    article         Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
     category        Category @relation(fields: [categoryId], references: [id])
 
     @@id([articleId, categoryId])

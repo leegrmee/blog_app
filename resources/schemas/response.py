@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 
 
@@ -7,16 +7,18 @@ class User(BaseModel):
     username: str
     email: str
     role: str
-    hashed_password: str
+    hashed_password: str = Field(..., alias="hashedPassword")
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime = Field(..., alias="updatedAt")
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class UserResponse(BaseModel):
     email: str
     role: str
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class SignUpResponse(BaseModel):
@@ -24,7 +26,7 @@ class SignUpResponse(BaseModel):
     username: str
     email: str
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 # token return
@@ -39,30 +41,31 @@ class TokenResponse(BaseModel):
 
 
 class TokenData(BaseModel):
-    user_email: str | None
+    user_email: str
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class ArticleResponse(BaseModel):
     id: int
-    userId: int
+    user_id: int = Field(..., alias="userId")
     title: str
     content: str
     views: int
-    createdAt: datetime
-    updatedAt: datetime
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime = Field(..., alias="updatedAt")
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class CommentResponse(BaseModel):
     id: int
-    userId: int
-    articleId: int
+    user_id: int = Field(..., alias="userId")
+    article_id: int = Field(..., alias="articleId")
     content: str
-    createdAt: datetime
-    updatedAt: datetime
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime = Field(..., alias="updatedAt")
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class CategoryResponse(BaseModel):
@@ -70,11 +73,18 @@ class CategoryResponse(BaseModel):
     name: str
     articles: list[ArticleResponse]
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class LikeResponse(BaseModel):
-    userId: int
-    articleId: int
+    user_id: int = Field(..., alias="userId")
+    article_id: int = Field(..., alias="articleId")
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class CategoryToArticleResponse(BaseModel):
+    article_id: int = Field(..., alias="articleId")
+    category_id: int = Field(..., alias="categoryId")
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

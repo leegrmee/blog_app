@@ -15,7 +15,7 @@ class ArticleService:
         self, user_id: int, skip: int, limit: int
     ) -> list[ArticleResponse]:
         return await self.article_repository.get_all_articles(
-            userId=user_id, skip=skip, limit=limit
+            user_id=user_id, skip=skip, limit=limit
         )
 
     async def get_article_by_articleid(self, article_id: int) -> ArticleResponse:

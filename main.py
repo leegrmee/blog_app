@@ -7,6 +7,9 @@ from resources.comment.comment_controller import router as comment_router
 from resources.like.like_controller import router as like_router
 from resources.auth.auth_controller import router as auth_router
 from config.Connection import prisma_connection
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager

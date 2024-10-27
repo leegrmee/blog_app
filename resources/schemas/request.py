@@ -6,8 +6,8 @@ from datetime import datetime
 # USER--------------
 class UserSignupRequest(BaseModel):
     username: str
-    password: str  # 해시 전
     email: str
+    password: str  # 해시 전
 
 
 class UserLoginRequest(BaseModel):

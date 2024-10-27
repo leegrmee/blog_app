@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, HTTPException, Depends
-from typing import List
 
 from resources.category.category_service import CategoryService
+from resources.schemas.response import User
 from resources.auth.auth_service import get_current_user
 
 
@@ -19,9 +19,9 @@ async def get_cats_handler(category_service: CategoryService = Depends()):
 @router.post("/article/{article_id}")
 async def select_cats_for_article_handler(
     article_id: int,
-    category_ids: List[int] = Body(...),
+    category_ids: list[int] = Body(...),
     category_service: CategoryService = Depends(),
-    current_user=Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user),
 ):
     """게시글에 카테고리 할당 (복수 선택 가능)"""
     updated_categories = await category_service.update_article_categories(
@@ -35,7 +35,7 @@ async def select_cats_for_article_handler(
 async def get_cats_of_article_handler(
     article_id: int,
     category_service: CategoryService = Depends(),
-    current_user=Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user),
 ):
     """게시글의 카테고리 조회"""
     categories = await category_service.get_categories_of_article(article_id)
@@ -48,7 +48,7 @@ async def remove_cat_from_article_handler(
     article_id: int,
     category_id: int,
     category_service: CategoryService = Depends(),
-    current_user=Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user),
 ):
     """게시글에서 특정 카테고리 제거"""
     updated_categories = await category_service.remove_category_from_article(
@@ -73,7 +73,7 @@ async def get_articles_by_cat_handler(
 async def get_user_cats_and_articles_handler(
     user_id: int,
     category_service: CategoryService = Depends(),
-    current_user=Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user),
 ):
 
     categories_with_articles = await category_service.get_user_categories_and_articles(
