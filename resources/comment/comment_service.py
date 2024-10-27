@@ -14,7 +14,7 @@ class CommentService:
         user_id: Optional[int] = None,
     ):
         comments = await self.comment_repository.get_comments(
-            comment_id=comment_id, article_id=article_id, user_id=user_id
+            id=comment_id, articleId=article_id, userId=user_id
         )
 
         if comment_id:
@@ -24,23 +24,21 @@ class CommentService:
 
     async def create_comment(self, user_id: int, article_id: int, content: str):
         return await self.comment_repository.create_comment(
-            user_id=user_id, article_id=article_id, content=content
+            userId=user_id, articleId=article_id, content=content
         )
 
     async def update_comment(self, user_id: int, comment_id: int, content: str):
         return await self.comment_repository.update_comment(
-            user_id=user_id, comment_id=comment_id, content=content
+            userId=user_id, id=comment_id, content=content
         )
 
     async def delete_comment(self, user_id: int, comment_id: int):
-        delete_comment = await self.comment_repository.get_comments(
-            comment_id=comment_id
-        )
+        delete_comment = await self.comment_repository.get_comments(id=comment_id)
         if not delete_comment.get("comment"):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Comment with id: {comment_id} does not exist",
             )
         return await self.comment_repository.delete_comment(
-            user_id=user_id, comment_id=comment_id
+            userId=user_id, id=comment_id
         )

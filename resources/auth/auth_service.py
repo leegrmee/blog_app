@@ -42,20 +42,17 @@ class AuthService:
 
         try:
             payload = jwt.decode(token, self.secretkey, algorithms=[self.jwt_algorithm])
-            user_id: int = payload.get("user_id")
+            user_email: int = payload.get("user_email")
 
-            if user_id is None:
+            if user_email is None:
                 raise credentials_exception
 
-            user_id = TokenData(user_id=user_id)
+            return TokenData(user_email=user_email)
 
         except JWTError:
             raise credentials_exception
 
-        return user_id
-
-    @staticmethod
-    async def logged_in_user(self, token: str = Depends(oauth2_scheme)) -> UserResponse:
+    async def logged_in_user(self, token: str) -> UserResponse:
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -63,7 +60,9 @@ class AuthService:
         )
 
         token_data = await self.verify_access_token(token, credentials_exception)
-        user = await self.user_repository.get_user_by_id(user_id=token_data.user_id)
+        user = await self.user_repository.get_user_by_email(
+            user_email=token_data.user_email
+        )
         if user is None:
             raise credentials_exception
 
@@ -75,5 +74,5 @@ auth_service = AuthService()
 
 
 # 의존성 함수 정의
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
-    return await auth_service.get_current_user(token)
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    return await auth_service.logged_in_user(token)

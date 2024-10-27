@@ -9,18 +9,17 @@ class CommentRepository:
 
     async def get_comments(
         self,
-        comment_id: Optional[int] = None,
-        article_id: Optional[int] = None,
-        user_id: Optional[int] = None,
+        id: Optional[int] = None,
+        articleId: Optional[int] = None,
+        userId: Optional[int] = None,
     ) -> List[CommentResponse]:
-
         filters = {}
-        if comment_id:
-            filters["id"] = comment_id
-        if article_id:
-            filters["article_id"] = article_id
-        if user_id:
-            filters["user_id"] = user_id
+        if id:
+            filters["id"] = id
+        if articleId:
+            filters["articleId"] = articleId
+        if userId:
+            filters["userId"] = userId
 
         comments = await self.prisma.comment.find_many(
             where=filters, include={"user": True, "article": True}
@@ -28,20 +27,20 @@ class CommentRepository:
         return [CommentResponse.model_validate(comment) for comment in comments]
 
     async def create_comment(
-        self, user_id: int, article_id: int, content: str
+        self, userId: int, articleId: int, content: str
     ) -> CommentResponse:
         new_comment = await self.prisma.comment.create(
-            data={"user_id": user_id, "article_id": article_id, "content": content}
+            data={"userId": userId, "articleId": articleId, "content": content}
         )
         return CommentResponse.model_validate(new_comment)
 
     async def update_comment(
-        self, user_id: int, comment_id: int, content: str
+        self, userId: int, id: int, content: str
     ) -> CommentResponse:
         updated_comment = await self.prisma.comment.update(
-            where={"id": comment_id, "user_id": user_id}, data={"content": content}
+            where={"id": id, "userId": userId}, data={"content": content}
         )
         return CommentResponse.model_validate(updated_comment)
 
-    async def delete_comment(self, user_id: int, comment_id: int) -> None:
-        await self.prisma.comment.delete(where={"id": comment_id, "user_id": user_id})
+    async def delete_comment(self, userId: int, id: int) -> None:
+        await self.prisma.comment.delete(where={"id": id, "userId": userId})

@@ -15,12 +15,12 @@ class ArticleService:
         self, user_id: int, skip: int, limit: int
     ) -> list[ArticleResponse]:
         return await self.article_repository.get_all_articles(
-            user_id=user_id, skip=skip, limit=limit
+            userId=user_id, skip=skip, limit=limit
         )
 
     async def get_article_by_articleid(self, article_id: int) -> ArticleResponse:
         article = await self.article_repository.get_article_by_articleid(
-            article_id=article_id
+            articleId=article_id
         )
         if article is None:
             raise HTTPException(
@@ -29,7 +29,7 @@ class ArticleService:
             )
         # 특정 게시물을 조회 할 때 조회수 증가
         updated_article = await self.article_repository.increment_views(
-            article_id=article_id
+            articleId=article_id
         )
         if updated_article is None:
             raise HTTPException(
@@ -39,40 +39,19 @@ class ArticleService:
 
         return updated_article
 
-    async def search_articles(
-        self,
-        category_id: int | None,
-        user_id: int | None,
-        created_date: datetime | None,
-        updated_date: datetime | None,
-        skip: int = 0,
-        limit: int = 10,
-    ) -> list[ArticleResponse]:
-
-        result = await self.article_repository.search_articles(
-            category_id=category_id,
-            user_id=user_id,
-            created_date=created_date,
-            updated_date=updated_date,
-            skip=skip,
-            limit=limit,
-        )
-
-        return result
-
     async def create_article(
         self, user_id: int, title: str, content: str, category_ids: list[int]
     ) -> ArticleResponse:
 
         new_article = await self.article_repository.create_article(
-            user_id=user_id,
+            userId=user_id,
             title=title,
             content=content,
         )
 
         if category_ids:
             await self.category_repository.update_article_categories(
-                article_id=new_article.id, category_ids=category_ids
+                articleId=new_article.id, categoryIds=category_ids
             )
 
         return new_article
@@ -80,7 +59,7 @@ class ArticleService:
     async def delete_article(self, article_id: int, user_id: int):
 
         article = await self.article_repository.get_article_by_articleid(
-            article_id=article_id
+            articleId=article_id
         )
         if article == None:
             raise HTTPException(
@@ -94,7 +73,9 @@ class ArticleService:
                 detail="Not authorized to perform requested action",
             )
         # 게시물 삭제
-        deleted_count = await self.article_repository.delete_article(article_id)
+        deleted_count = await self.article_repository.delete_article(
+            articleId=article_id
+        )
 
         if deleted_count == 0:
             raise HTTPException(
@@ -113,7 +94,7 @@ class ArticleService:
     ) -> ArticleResponse:
 
         article = await self.article_repository.get_article_by_articleid(
-            article_id=article_id
+            articleId=article_id
         )
         if article is None:
             raise HTTPException(
@@ -127,7 +108,28 @@ class ArticleService:
             )
 
         updated_article = await self.article_repository.update_article(
-            article_id=article_id, new_title=new_title, new_content=new_content
+            articleId=article_id, new_title=new_title, new_content=new_content
         )
 
         return updated_article
+
+    async def search_articles(
+        self,
+        category_id: int | None,
+        user_id: int | None,
+        created_date: datetime | None,
+        updated_date: datetime | None,
+        skip: int = 0,
+        limit: int = 10,
+    ) -> list[ArticleResponse]:
+
+        result = await self.article_repository.search_articles(
+            categoryId=category_id,
+            userId=user_id,
+            createdAt=created_date,
+            updatedAt=updated_date,
+            skip=skip,
+            limit=limit,
+        )
+
+        return result

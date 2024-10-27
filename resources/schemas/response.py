@@ -1,14 +1,20 @@
 from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
 from datetime import datetime
 
 
-class UserResponse(BaseModel):
+class User(BaseModel):
     id: int
     username: str
     email: str
     role: str
     hashed_password: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserResponse(BaseModel):
+    email: str
+    role: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -33,28 +39,28 @@ class TokenResponse(BaseModel):
 
 
 class TokenData(BaseModel):
-    user_id: Optional[int] = None
+    user_email: str | None
 
 
 class ArticleResponse(BaseModel):
     id: int
-    user_id: str
+    userId: int
     title: str
     content: str
     views: int
-    created_date: datetime
-    updated_date: datetime
+    createdAt: datetime
+    updatedAt: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class CommentResponse(BaseModel):
     id: int
-    user_id: int
-    article_id: int
+    userId: int
+    articleId: int
     content: str
-    created_date: datetime
-    updated_date: datetime
+    createdAt: datetime
+    updatedAt: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -68,7 +74,7 @@ class CategoryResponse(BaseModel):
 
 
 class LikeResponse(BaseModel):
-    user_id: int
-    article_id: int
+    userId: int
+    articleId: int
 
     model_config = ConfigDict(from_attributes=True)

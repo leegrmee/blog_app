@@ -15,17 +15,6 @@ async def get_cats_handler(category_service: CategoryService = Depends()):
     return {"categories": await category_service.get_categories()}
 
 
-@router.get("/{category_id}")
-async def get_cat_by_id_handler(
-    category_id: int, category_service: CategoryService = Depends()
-):
-    """특정 ID의 카테고리 조회"""
-    category = await category_service.get_category(category_id)
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
-    return {"category": category}
-
-
 # 게시물에 카테고리 할당
 @router.post("/article/{article_id}")
 async def select_cats_for_article_handler(

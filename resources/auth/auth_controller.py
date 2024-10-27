@@ -5,7 +5,7 @@ from resources.auth.auth_utils import verify_password
 from resources.schemas.request import UserLoginRequest, PasswordUpdateRequest
 from resources.schemas.response import JWTResponse, UserResponse
 from resources.user.user_service import UserService
-from resources.auth.auth_service import AuthService
+from resources.auth.auth_service import get_current_user, auth_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -14,14 +14,11 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/login", status_code=status.HTTP_200_OK)
 async def user_login_handler(
     user_service: UserService = Depends(),
-    auth_service: AuthService = Depends(),
     user_credentials: OAuth2PasswordRequestForm = Depends(),
 ):
 
-    user: Optional[UserResponse] = await user_service.get_user_by_email(
-        user_credentials.username
-    )
-    # Oauth2 에서 제공하는 username 은 email 임
+    user = await user_service.get_user_by_email(user_credentials.username)
+    # user_credentials.username - Oauth2 에서 제공하는 username 은 email 임
 
     if not user:
         raise HTTPException(
@@ -33,7 +30,7 @@ async def user_login_handler(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
         )
 
-    token: str = auth_service.create_access_token({"user_id": user.id})
+    token: str = auth_service.create_access_token({"user_email": user.email})
 
     return JWTResponse(access_token=token)
 
@@ -46,9 +43,9 @@ and ensuring that the user is authenticated and authorized to make such changes.
 # 비밀번호 수정
 @router.put("/update-password", status_code=status.HTTP_200_OK)
 async def password_update_handler(
-    request: PasswordUpdateRequest = Body(...),
+    request: PasswordUpdateRequest,
     user_service: UserService = Depends(),
-    current_user: UserResponse = Depends(AuthService.logged_in_user),
+    current_user: UserResponse = Depends(get_current_user),
 ):
     if current_user.email != request.email:
         raise HTTPException(
