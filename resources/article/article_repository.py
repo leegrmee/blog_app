@@ -1,140 +1,136 @@
-from fastapi import HTTPException, status
-from typing import Optional
 from datetime import datetime
-from ..schemas.response import ArticleResponse
 from config.Connection import prisma_connection
+from typing import Optional
 
 
 class ArticleRepository:
     def __init__(self):
         self.prisma = prisma_connection.prisma
 
-    async def get_all_articles(
-        self, user_id: int, skip: int, limit: int
-    ) -> list[ArticleResponse]:
-        articles = await self.prisma.article.find_many(
+    def find_many(self, user_id: int, skip: int, limit: int):
+        return self.prisma.article.find_many(
             where={"userId": user_id},
             skip=skip,
             take=limit,
             order={"createdAt": "desc"},
             include={"user": True},
         )
-        return [ArticleResponse.model_validate(article) for article in articles]
 
-    async def get_article_by_articleid(self, articleId: int) -> ArticleResponse | None:
-
-        article = await self.prisma.article.find_unique(
-            where={"id": articleId},
+    def find_by_id(self, article_id: int):
+        article = self.prisma.article.find_unique(
+            where={"id": article_id},
             include={"user": True, "categories": {"include": {"category": True}}},
         )
+        if not article:
+            return None
 
-        if article:
-            categories = (
-                [cat.category.id for cat in article.categories]
-                if article.categories
-                else []
-            )
-            article_dict = {**article.model_dump(), "categories": categories}
-            return ArticleResponse.model_validate(article_dict)
+        categories = (
+            [cat.category.id for cat in article.categories]
+            if article.categories
+            else []
+        )
+        article_dict = {**article.model_dump(), "categories": categories}
+        return article_dict
 
-        return None
-
-    async def increment_views(self, articleId: int) -> ArticleResponse | None:
-        updated_article = await self.prisma.article.update(
-            where={"id": articleId},
-            data={
-                "views": {"increment": 1}
-            },  # {"increment": 1}= UPDATE Article SET views = views + 1 WHERE id = :article_id
+    def increment_view_count(self, article_id: int):
+        return self.prisma.article.update(
+            where={"id": article_id},
+            data={"views": {"increment": 1}},
             include={"user": True},
         )
-        if updated_article:
-            return ArticleResponse.model_validate(updated_article)
 
-    async def search_articles(
-        self,
-        categoryId: Optional[int] = None,
-        userId: Optional[int] = None,
-        createdAt: Optional[datetime] = None,
-        updatedAt: Optional[datetime] = None,
-        skip: int = 0,
-        limit: int = 10,
-    ) -> list[ArticleResponse]:
+    class SearchParams:
+        def __init__(
+            self,
+            category_id: Optional[int] = None,
+            user_id: Optional[int] = None,
+            created_at: Optional[datetime] = None,
+            updated_at: Optional[datetime] = None,
+            skip: int = 0,
+            limit: int = 10,
+        ):
+            self.category_id = category_id
+            self.user_id = user_id
+            self.created_at = created_at
+            self.updated_at = updated_at
+            self.skip = skip
+            self.limit = limit
+
+    def search(self, params: SearchParams):
         filters = {}
-        if categoryId is not None:
-            filters["categories"] = {"some": {"categoryId": categoryId}}
-        if userId is not None:
-            filters["userId"] = userId
-        if createdAt is not None:
-            filters["createdAt"] = createdAt
-        if updatedAt:
-            filters["updatedAt"] = updatedAt
+        if params.category_id is not None:
+            filters["categories"] = {"some": {"categoryId": params.category_id}}
+        if params.user_id is not None:
+            filters["userId"] = params.user_id
+        if params.created_at is not None:
+            filters["createdAt"] = params.created_at
+        if params.updated_at:
+            filters["updatedAt"] = params.updated_at
 
-        articles = await self.prisma.article.find_many(
+        return self.prisma.article.find_many(
             where=filters,
-            skip=skip,
-            take=limit,
+            skip=params.skip,
+            take=params.limit,
             include={"user": True, "categories": True},
         )
-        return [ArticleResponse.model_validate(article) for article in articles]
 
-    async def create_article(
-        self, userId: int, title: str, content: str
-    ) -> ArticleResponse:
-
-        new_article = await self.prisma.article.create(
+    def create(self, user_id: int, title: str, content: str):
+        return self.prisma.article.create(
             data={
-                "user": {"connect": {"id": userId}},
+                "user": {"connect": {"id": user_id}},
                 "title": title,
                 "content": content,
             }
         )
-        return ArticleResponse.model_validate(new_article)
 
-    async def delete_article(self, articleId: int):
-        article = await self.prisma.article.find_unique(where={"id": articleId})
+    def delete(self, article_id: int):
+        article = self.prisma.article.find_unique(where={"id": article_id})
         if not article:
             return None
-        return await self.prisma.article.delete(where={"id": articleId})
+        return self.prisma.article.delete(where={"id": article_id})
 
-    async def update_article(
-        self,
-        articleId: int,
-        new_title: str | None,
-        new_content: str | None,
-        new_categories: list[int] | None,
-    ) -> ArticleResponse:
+    class UpdateParams:
+        def __init__(
+            self,
+            article_id: int,
+            title: Optional[str] = None,
+            content: Optional[str] = None,
+            categories: Optional[list[int]] = None,
+        ):
+            self.article_id = article_id
+            self.title = title
+            self.content = content
+            self.categories = categories
 
-        article = await self.prisma.article.find_unique(where={"id": articleId})
-        # article이 None인 경우 체크가 필요합니다
-        if article is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Article with id: {articleId} does not exist",
-            )
+    def update(self, params: UpdateParams):
+        article = self.prisma.article.find_unique(where={"id": params.article_id})
+        if not article:
+            return None
 
         update_data = {}
-        if new_title is not None:
-            update_data["title"] = new_title
-        if new_content is not None:
-            update_data["content"] = new_content
-        if new_categories is not None:
-            # CategoryToArticle 모델에 맞게 수정
+        if params.title is not None:
+            update_data["title"] = params.title
+        if params.content is not None:
+            update_data["content"] = params.content
+        if params.categories is not None:
             update_data["categories"] = {
-                "deleteMany": {},  # 기존 카테고리 관계를 모두 삭제
+                "deleteMany": {},
                 "create": [
                     {"category": {"connect": {"id": cat_id}}}
-                    for cat_id in new_categories
+                    for cat_id in params.categories
                 ],
             }
-        updated_article = await self.prisma.article.update(
+
+        updated_article = self.prisma.article.update(
             where={"id": article.id},
             data=update_data,
             include={"user": True, "categories": {"include": {"category": True}}},
         )
+
         categories = (
             [cat.category.id for cat in updated_article.categories]
             if updated_article.categories
             else []
         )
         article_dict = {**updated_article.model_dump(), "categories": categories}
-        return ArticleResponse.model_validate(article_dict)
+        return article_dict
