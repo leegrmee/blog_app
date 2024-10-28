@@ -71,7 +71,7 @@ class CommentResponse(BaseModel):
 class CategoryResponse(BaseModel):
     id: int
     name: str
-    articles: list[ArticleResponse]
+    articles: list[ArticleResponse] | None = []
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 

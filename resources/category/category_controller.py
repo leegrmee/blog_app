@@ -15,21 +15,6 @@ async def get_cats_handler(category_service: CategoryService = Depends()):
     return {"categories": await category_service.get_categories()}
 
 
-# 게시물에 카테고리 할당
-@router.post("/article/{article_id}")
-async def select_cats_for_article_handler(
-    article_id: int,
-    category_ids: list[int] = Body(...),
-    category_service: CategoryService = Depends(),
-    current_user: User | None = Depends(get_current_user),
-):
-    """게시글에 카테고리 할당 (복수 선택 가능)"""
-    updated_categories = await category_service.update_article_categories(
-        article_id, category_ids
-    )
-    return {"article_id": article_id, "categories": updated_categories}
-
-
 # 각 게시글의 카테고리 조회
 @router.get("/article/{article_id}")
 async def get_cats_of_article_handler(

@@ -23,15 +23,6 @@ class CategoryService:
             articleId=article_id
         )
 
-    async def update_article_categories(
-        self, article_id: int, category_ids: List[int]
-    ) -> List[CategoryResponse]:
-        """게시글의 카테고리 업데이트"""
-        await self.category_repository.update_article_categories(
-            articleId=article_id, categoryIds=category_ids
-        )
-        return await self.get_categories_of_article(article_id)
-
     async def get_articles_by_category(self, category_id: int) -> List[ArticleResponse]:
         """특정 카테고리의 게시글 조회"""
         return await self.category_repository.get_articles_by_category(
