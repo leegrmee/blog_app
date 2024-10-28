@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, HTTPException, Depends
 
 from resources.category.category_service import CategoryService
-from resources.schemas.response import User
+from resources.schemas.response import User, CategoryResponse
 from resources.auth.auth_service import get_current_user
 
 
@@ -25,21 +25,6 @@ async def get_cats_of_article_handler(
     """게시글의 카테고리 조회"""
     categories = await category_service.get_categories_of_article(article_id)
     return {"article_id": article_id, "categories": categories}
-
-
-# 게시물에서 카테고리 삭제
-@router.delete("/article/{article_id}/{category_id}")
-async def remove_cat_from_article_handler(
-    article_id: int,
-    category_id: int,
-    category_service: CategoryService = Depends(),
-    current_user: User | None = Depends(get_current_user),
-):
-    """게시글에서 특정 카테고리 제거"""
-    updated_categories = await category_service.remove_category_from_article(
-        article_id, category_id
-    )
-    return {"article_id": article_id, "categories": updated_categories}
 
 
 # 카테고리별 게시글 조회
@@ -68,3 +53,18 @@ async def get_user_cats_and_articles_handler(
         "user_id": current_user.id,
         "categories_with_articles": categories_with_articles,
     }
+
+
+# 게시물에서 카테고리 삭제
+@router.delete("/article/{article_id}/{category_id}")
+async def remove_cat_from_article_handler(
+    article_id: int,
+    category_id: int,
+    category_service: CategoryService = Depends(),
+    current_user: User | None = Depends(get_current_user),
+) -> list[CategoryResponse]:
+    """게시글에서 특정 카테고리 제거"""
+    updated_categories = await category_service.remove_category_from_article(
+        article_id, category_id
+    )
+    return updated_categories

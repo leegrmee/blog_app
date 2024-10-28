@@ -4,3 +4,5 @@
 4) подключить prisma
 5) реализовать логику сервисов
 
+10/28
+рефакторинг - HTTP error, renaming, response models (ex:users)

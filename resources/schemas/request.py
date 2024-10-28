@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -29,8 +29,21 @@ class ArticleCreate(BaseModel):
 
 
 class ArticleUpdate(BaseModel):
-    title: Optional[str]
-    content: Optional[str]
+    title: Optional[str] = None
+    content: Optional[str] = None
+    categories: Optional[list[int]] = None
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {
+                "title": "Updated Title",
+                "content": "Updated Content",
+                "categories": [1, 2, 3],
+            }
+        },
+    )
 
 
 class ArticleSearch(BaseModel):

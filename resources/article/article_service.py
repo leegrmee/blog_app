@@ -18,8 +18,8 @@ class ArticleService:
             user_id=user_id, skip=skip, limit=limit
         )
 
-    async def get_article_by_articleid(self, article_id: int) -> ArticleResponse:
-        article = await self.article_repository.get_article_by_articleid(
+    async def get_article_by_article_id(self, article_id: int) -> ArticleResponse:
+        article = await self.article_repository.get_article_by_article_id(
             articleId=article_id
         )
         if article is None:
@@ -91,6 +91,7 @@ class ArticleService:
         user_id: int,
         new_title: str | None,
         new_content: str | None,
+        new_categories: list[int] | None,
     ) -> ArticleResponse:
 
         article = await self.article_repository.get_article_by_articleid(
@@ -108,7 +109,10 @@ class ArticleService:
             )
 
         updated_article = await self.article_repository.update_article(
-            articleId=article_id, new_title=new_title, new_content=new_content
+            articleId=article_id,
+            new_title=new_title,
+            new_content=new_content,
+            new_categories=new_categories,
         )
 
         return updated_article

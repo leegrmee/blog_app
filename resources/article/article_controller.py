@@ -10,14 +10,13 @@ router = APIRouter(prefix="/articles", tags=["Articles"])
 
 # 모든 게시물 조회
 @router.get("/", status_code=status.HTTP_200_OK)
-async def get_articles_handler(
+def get_articles_handler(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=30),
     article_service: ArticleService = Depends(),
     current_user: User | None = Depends(get_current_user),
 ) -> list[ArticleResponse]:
-
-    return await article_service.get_all_articles(
+    return article_service.get_all_articles(
         user_id=current_user.id, skip=skip, limit=limit
     )
 
@@ -56,19 +55,33 @@ async def create_article_handler(
 @router.put("/{article_id}", status_code=status.HTTP_200_OK)
 async def update_article_handler(
     article_id: int,
-    updated_article: ArticleUpdate,
+    update_article: ArticleUpdate,
     article_service: ArticleService = Depends(),
     current_user: User | None = Depends(get_current_user),
 ):
+    # 디버깅을 위한 로그 추가
+    print("Received update_article:", update_article)
+    print("Current user:", current_user)
 
-    updated_article: ArticleResponse = await article_service.update_article(
-        article_id=article_id,
-        user_id=current_user.id,
-        new_title=updated_article.title,
-        new_content=updated_article.content,
-    )
+    if current_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required"
+        )
 
-    return updated_article
+    try:
+        updated_article: ArticleResponse = await article_service.update_article(
+            article_id=article_id,
+            user_id=current_user.id,
+            new_title=update_article.title,
+            new_content=update_article.content,
+            new_categories=update_article.categories,
+        )
+
+        return updated_article
+
+    except Exception as e:
+        print("Error during update:", str(e))
+        raise e
 
 
 # 게시물 삭제

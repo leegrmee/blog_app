@@ -80,7 +80,7 @@ class AuthService:
                 raise credentials_exception
 
             # 사용자 조회 시도
-            user = await self.user_repository.get_user_by_email(
+            user = await self.user_repository.find_one_by_email(
                 user_email=token_data.user_email
             )
             logging.info(f"User lookup result: {user}")  # 로깅 추가

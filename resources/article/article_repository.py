@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 from typing import Optional
 from datetime import datetime
 from ..schemas.response import ArticleResponse
@@ -23,10 +24,20 @@ class ArticleRepository:
     async def get_article_by_articleid(self, articleId: int) -> ArticleResponse | None:
 
         article = await self.prisma.article.find_unique(
-            where={"id": articleId}, include={"user": True}
+            where={"id": articleId},
+            include={"user": True, "categories": {"include": {"category": True}}},
         )
+
         if article:
-            return ArticleResponse.model_validate(article)
+            categories = (
+                [cat.category.id for cat in article.categories]
+                if article.categories
+                else []
+            )
+            article_dict = {**article.model_dump(), "categories": categories}
+            return ArticleResponse.model_validate(article_dict)
+
+        return None
 
     async def increment_views(self, articleId: int) -> ArticleResponse | None:
         updated_article = await self.prisma.article.update(
@@ -86,17 +97,44 @@ class ArticleRepository:
         return await self.prisma.article.delete(where={"id": articleId})
 
     async def update_article(
-        self, articleId: int, new_title: str, new_content: str
+        self,
+        articleId: int,
+        new_title: str | None,
+        new_content: str | None,
+        new_categories: list[int] | None,
     ) -> ArticleResponse:
 
         article = await self.prisma.article.find_unique(where={"id": articleId})
+        # article이 None인 경우 체크가 필요합니다
+        if article is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Article with id: {articleId} does not exist",
+            )
 
         update_data = {}
         if new_title is not None:
             update_data["title"] = new_title
         if new_content is not None:
             update_data["content"] = new_content
+        if new_categories is not None:
+            # CategoryToArticle 모델에 맞게 수정
+            update_data["categories"] = {
+                "deleteMany": {},  # 기존 카테고리 관계를 모두 삭제
+                "create": [
+                    {"category": {"connect": {"id": cat_id}}}
+                    for cat_id in new_categories
+                ],
+            }
         updated_article = await self.prisma.article.update(
-            where={"id": article.id}, data=update_data
+            where={"id": article.id},
+            data=update_data,
+            include={"user": True, "categories": {"include": {"category": True}}},
         )
-        return ArticleResponse.model_validate(updated_article)
+        categories = (
+            [cat.category.id for cat in updated_article.categories]
+            if updated_article.categories
+            else []
+        )
+        article_dict = {**updated_article.model_dump(), "categories": categories}
+        return ArticleResponse.model_validate(article_dict)

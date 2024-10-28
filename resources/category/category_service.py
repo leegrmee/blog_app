@@ -1,5 +1,4 @@
 from .category_repository import CategoryRepository
-from typing import List
 from resources.schemas.response import CategoryResponse, ArticleResponse
 
 
@@ -7,7 +6,7 @@ class CategoryService:
     def __init__(self):
         self.category_repository = CategoryRepository()
 
-    async def get_categories(self) -> List[CategoryResponse]:
+    async def get_categories(self) -> list[CategoryResponse]:
         """모든 카테고리 조회"""
         return await self.category_repository.get_all_categories()
 
@@ -17,13 +16,13 @@ class CategoryService:
 
     async def get_categories_of_article(
         self, article_id: int
-    ) -> List[CategoryResponse]:
+    ) -> list[CategoryResponse]:
         """특정 게시글의 카테고리 조회"""
         return await self.category_repository.get_categories_of_article(
             articleId=article_id
         )
 
-    async def get_articles_by_category(self, category_id: int) -> List[ArticleResponse]:
+    async def get_articles_by_category(self, category_id: int) -> list[ArticleResponse]:
         """특정 카테고리의 게시글 조회"""
         return await self.category_repository.get_articles_by_category(
             categoryId=category_id
@@ -31,8 +30,18 @@ class CategoryService:
 
     async def get_user_categories_and_articles(
         self, user_id: int
-    ) -> List[CategoryResponse]:
+    ) -> list[CategoryResponse]:
         """사용자가 선택한 카테고리 및 카테고리별 작성한 게시글 조회"""
         return await self.category_repository.get_user_categories_with_articles(
             userId=user_id
         )
+
+    async def remove_category_from_article(
+        self, article_id: int, category_id: int
+    ) -> list[CategoryResponse]:
+        """게시글에서 특정 카테고리 제거"""
+        await self.category_repository.remove_category_from_article(
+            articleId=article_id, categoryId=category_id
+        )
+        # 업데이트된 카테고리 목록을 반환
+        return await self.get_categories_of_article(article_id)

@@ -50,6 +50,7 @@ class ArticleResponse(BaseModel):
     user_id: int = Field(..., alias="userId")
     title: str
     content: str
+    categories: list[int] = Field(default_factory=list)
     views: int
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
