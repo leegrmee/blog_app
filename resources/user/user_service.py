@@ -27,15 +27,8 @@ class UserService:
             )
         return user
 
-    async def signup(self, request: UserSignupRequest) -> SignUpResponse:
+    async def signup(self, request: UserSignupRequest):
         hashed_password = hash_password(request.password)
-
-        # 이미 존재하는 이메일인지 확인
-        existing_user = await self.find_one_by_email(request.email)
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists"
-            )
 
         # 새 사용자 가입
         return await self.user_repository.create(
@@ -44,7 +37,7 @@ class UserService:
             hashed_password=hashed_password,
         )
 
-    async def update_password(self, email: str, new_password: str) -> UserResponse:
+    async def update_password(self, email: str, new_password: str):
         new_hashed_password: str = hash_password(new_password)
         updated_user: UserResponse = await self.user_repository.update_password(
             email=email, hashed_password=new_hashed_password

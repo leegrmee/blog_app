@@ -9,75 +9,75 @@ datasource db {
 }
 
 
-model User { 
+model user { 
     id               Int       @id @default(autoincrement())
     username         String
     email            String    @unique
-    hashed_password  String
+    hashedpassword   String
     role             String    @default("user")
-    createdAt        DateTime  @default(now())
-    updatedAt        DateTime  @updatedAt
+    created_at       DateTime  @default(now())
+    updated_at       DateTime  @updatedAt
 
-    articles         Article[]
-    comments         Comment[]
-    likes            Like[]
+    articles         article[]
+    comments         comment[]
+    likes            like[]
 }
 
-model Article {
+model article {
     id              Int      @id @default(autoincrement())
     title           String
     content         String
     views           Int      @default(0)
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt
 
-    userId          Int
-    user            User     @relation(fields: [userId], references: [id])
+    user_id         Int
+    user            user     @relation(fields: [user_id], references: [id])
 
-    comments        Comment[]
-    likes           Like[]
-    categories      CategoryToArticle[]
+    comments        comment[]
+    likes           like[]
+    categories      category_to_article[]
 }
 
-model Category {
+model category {
     id              Int      @id @default(autoincrement())
     name            String
 
-    articles CategoryToArticle[]
+    articles      category_to_article[]
 }
 
-model CategoryToArticle {
-    articleId       Int
-    categoryId      Int
+model category_to_article {
+    article_id      Int
+    category_id     Int
 
-    article         Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
-    category        Category @relation(fields: [categoryId], references: [id])
+    article         article  @relation(fields: [article_id], references: [id], onDelete: Cascade)
+    category        category @relation(fields: [category_id], references: [id])
 
-    @@id([articleId, categoryId])
+    @@id([article_id, category_id])
 }
 
-model Comment {
+model comment {
     id              Int      @id @default(autoincrement())
     content         String
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt
 
-    articleId       Int
-    userId          Int
+    article_id      Int
+    user_id         Int
 
-    article         Article  @relation(fields: [articleId], references: [id])
-    user            User     @relation(fields: [userId], references: [id])
+    article         article  @relation(fields: [article_id], references: [id])
+    user            user     @relation(fields: [user_id], references: [id])
 }
 
-model Like {
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
+model like {
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt
 
-    articleId       Int
-    userId          Int
+    article_id      Int
+    user_id         Int
 
-    article         Article  @relation(fields: [articleId], references: [id])
-    user            User     @relation(fields: [userId], references: [id])
+    article         article  @relation(fields: [article_id], references: [id])
+    user            user     @relation(fields: [user_id], references: [id])
 
-    @@id([articleId, userId])
+    @@id([article_id, user_id])
 }

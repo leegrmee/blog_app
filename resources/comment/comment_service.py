@@ -1,44 +1,32 @@
-from resources.comment.comment_repository import CommentRepository
-from fastapi import HTTPException, status
-from typing import Optional
+from resources.comment.comment_repository import (
+    CommentRepository,
+    CommentFilters,
+    CommentData,
+)
 
 
 class CommentService:
     def __init__(self):
         self.comment_repository = CommentRepository()
 
-    async def get_comments(
-        self,
-        comment_id: Optional[int] = None,
-        article_id: Optional[int] = None,
-        user_id: Optional[int] = None,
-    ):
-        comments = await self.comment_repository.get_comments(
-            id=comment_id, articleId=article_id, userId=user_id
-        )
+    async def find_by_id(self, comment_id: int):
+        return await self.comment_repository.find_by_id(comment_id)
 
-        if comment_id:
-            return {"comment": comments[0] if comments else None}
-        else:
-            return {"comments": comments}
+    async def find_by_filters(self, request: CommentFilters):
+        return await self.comment_repository.find_by_filters(request)
 
-    async def create_comment(self, user_id: int, article_id: int, content: str):
-        return await self.comment_repository.create_comment(
-            userId=user_id, articleId=article_id, content=content
-        )
+    async def create(self, request: CommentData):
+        return await self.comment_repository.create(request)
 
-    async def update_comment(self, user_id: int, comment_id: int, content: str):
-        return await self.comment_repository.update_comment(
-            userId=user_id, id=comment_id, content=content
-        )
+    async def update(self, request: CommentData):
+        return await self.comment_repository.update(request)
 
-    async def delete_comment(self, user_id: int, comment_id: int):
-        delete_comment = await self.comment_repository.get_comments(id=comment_id)
-        if not delete_comment.get("comment"):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Comment with id: {comment_id} does not exist",
-            )
-        return await self.comment_repository.delete_comment(
-            userId=user_id, id=comment_id
+    async def delete(self, user_id: int, comment_id: int):
+        delete_comment = await self.comment_repository.find_by_id(comment_id)
+
+        if not delete_comment:
+            return f"Comment with id:{comment_id} not found"
+
+        return await self.comment_repository.delete(
+            user_id=user_id, comment_id=comment_id
         )

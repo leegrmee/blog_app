@@ -14,18 +14,14 @@ async def like_handler(
     current_user: User | None = Depends(get_current_user),
 ):
 
-    await like_service.like(
+    return await like_service.like(
         dir=like.dir, article_id=like.article_id, user_id=current_user.id
     )
 
-    return {"like": {}}
-
 
 @router.get("/{article_id}")
-async def get_likes_of_article_handler(
+async def count_likes_of_article_handler(
     article_id: int, like_service: LikeService = Depends()
 ):
 
-    likes_count = await like_service.get_likes_count_by_article_id(article_id)
-
-    return {"likes_count": likes_count}
+    return await like_service.count_likes(article_id)

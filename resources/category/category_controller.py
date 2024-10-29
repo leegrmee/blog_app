@@ -8,45 +8,39 @@ from resources.auth.auth_service import get_current_user
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
 
-# 모든 카테고리 조회
 @router.get("/")
 async def get_cats_handler(category_service: CategoryService = Depends()):
-    """모든 카테고리 조회"""
-    return {"categories": await category_service.get_categories()}
+    """fetch all categories"""
+    return {"categories": await category_service.find_all()}
 
 
-# 각 게시글의 카테고리 조회
 @router.get("/article/{article_id}")
 async def get_cats_of_article_handler(
     article_id: int,
     category_service: CategoryService = Depends(),
     current_user: User | None = Depends(get_current_user),
 ):
-    """게시글의 카테고리 조회"""
-    categories = await category_service.get_categories_of_article(article_id)
-    return {"article_id": article_id, "categories": categories}
+    """fetch categories of an article"""
+    return await category_service.find_by_article_id(article_id)
 
 
-# 카테고리별 게시글 조회
 @router.get("/category/{category_id}/articles")
 async def get_articles_by_cat_handler(
     category_id: int,
     category_service: CategoryService = Depends(),
 ):
-    """특정 카테고리에 속한 게시글 조회"""
-    articles = await category_service.get_articles_by_category(category_id)
-    return {"category_id": category_id, "articles": articles}
+    """fetch articles of a specific category"""
+    return await category_service.find_articles_by_category(category_id)
 
 
-# 유저별 카테고리 및 게시글 조회
 @router.get("/user/{user_id}/categories-articles")
 async def get_user_cats_and_articles_handler(
     user_id: int,
     category_service: CategoryService = Depends(),
     current_user: User | None = Depends(get_current_user),
 ):
-
-    categories_with_articles = await category_service.get_user_categories_and_articles(
+    """fetch categories and articles of a specific user"""
+    categories_with_articles = await category_service.find_by_user_id(
         user_id=current_user.id
     )
     return {
@@ -62,9 +56,6 @@ async def remove_cat_from_article_handler(
     category_id: int,
     category_service: CategoryService = Depends(),
     current_user: User | None = Depends(get_current_user),
-) -> list[CategoryResponse]:
-    """게시글에서 특정 카테고리 제거"""
-    updated_categories = await category_service.remove_category_from_article(
-        article_id, category_id
-    )
-    return updated_categories
+):
+    """remove a specific category from an article"""
+    return await category_service.delete(article_id, category_id)

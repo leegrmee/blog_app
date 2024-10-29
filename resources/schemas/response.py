@@ -7,7 +7,7 @@ class User(BaseModel):
     username: str
     email: str
     role: str
-    hashed_password: str = Field(..., alias="hashedPassword")
+    hashedpassword: str = Field(..., alias="hashedPassword")
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
 
@@ -47,24 +47,24 @@ class TokenData(BaseModel):
 
 class ArticleResponse(BaseModel):
     id: int
-    user_id: int = Field(..., alias="userId")
-    title: str
-    content: str
-    categories: list[int] = Field(default_factory=list)
-    views: int
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
+    user_id: int
+    title: str | None = None
+    content: str | None = None
+    categories: list[int] | None = Field(default_factory=list)
+    views: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class CommentResponse(BaseModel):
     id: int
-    user_id: int = Field(..., alias="userId")
-    article_id: int = Field(..., alias="articleId")
+    user_id: int
+    article_id: int
     content: str
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 

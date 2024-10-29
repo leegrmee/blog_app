@@ -17,7 +17,7 @@ async def user_login_handler(
     user_credentials: OAuth2PasswordRequestForm = Depends(),
 ):
 
-    user: User | None = await user_service.get_user_by_email(user_credentials.username)
+    user: User | None = await user_service.find_one_by_email(user_credentials.username)
     # user_credentials.username - Oauth2 에서 제공하는 username 은 email 임
 
     if not user:
@@ -25,7 +25,7 @@ async def user_login_handler(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
         )
 
-    if not verify_password(user_credentials.password, user.hashed_password):
+    if not verify_password(user_credentials.password, user.hashedpassword):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
         )
@@ -36,11 +36,6 @@ async def user_login_handler(
     token: str = auth_service.create_access_token({"user_email": user.email})
 
     return JWTResponse(access_token=token)
-
-
-"""While the UserService handles the business logic of updating the password 
-in the database, the auth_controller.py is responsible for the security checks 
-and ensuring that the user is authenticated and authorized to make such changes. """
 
 
 # 비밀번호 수정
@@ -55,13 +50,13 @@ async def password_update_handler(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
         )
 
-    if not verify_password(request.password, current_user.hashed_password):
+    if not verify_password(request.password, current_user.hashedpassword):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
         )
 
-    updated_user: UserResponse = await user_service.update_password(
+    await user_service.update_password(
         email=current_user.email, new_password=request.new_password
     )
 
-    return {"message": "Password updated successfully", "user": updated_user}
+    return "Password updated successfully"

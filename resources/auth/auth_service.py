@@ -103,16 +103,8 @@ auth_service = AuthService()
 # 의존성 함수 정의
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
-        user: User | None = await auth_service.logged_in_user(token)
+        user: User = await auth_service.logged_in_user(token)
         logging.info(f"Current user: {user}")
-        if not user:
-            logging.error("No user returned from logged_in_user")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
         logging.info(f"Successfully retrieved user: {user.email}")
 
         return user
@@ -122,4 +114,4 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e

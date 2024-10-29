@@ -1,46 +1,58 @@
-from typing import List, Optional
+from typing import TypedDict
 from config.Connection import prisma_connection
-from resources.schemas.response import CommentResponse
+from dataclasses import dataclass
+
+
+@dataclass
+class CommentData(TypedDict):
+    user_id: int
+    article_id: int
+    content: str
+
+
+@dataclass
+class CommentFilters(TypedDict, total=False):
+    article_id: int | None
+    user_id: int | None
 
 
 class CommentRepository:
     def __init__(self):
         self.prisma = prisma_connection.prisma
 
-    async def get_comments(
-        self,
-        id: Optional[int] = None,
-        articleId: Optional[int] = None,
-        userId: Optional[int] = None,
-    ) -> List[CommentResponse]:
-        filters = {}
-        if id:
-            filters["id"] = id
-        if articleId:
-            filters["articleId"] = articleId
-        if userId:
-            filters["userId"] = userId
+    async def find_by_id(self, comment_id: int):
+        return await self.prisma.comment.find_unique(
+            where={"id": comment_id}, include={"user": True, "article": True}
+        )
+
+    async def find_by_filters(self, filters: CommentFilters):
+        where_clause = {}
+        if filters.get("article_id"):
+            where_clause["articleId"] = filters["article_id"]
+        if filters.get("user_id"):
+            where_clause["userId"] = filters["user_id"]
 
         comments = await self.prisma.comment.find_many(
-            where=filters, include={"user": True, "article": True}
+            where=where_clause, include={"user": True, "article": True}
         )
-        return [CommentResponse.model_validate(comment) for comment in comments]
+        return comments
 
-    async def create_comment(
-        self, userId: int, articleId: int, content: str
-    ) -> CommentResponse:
-        new_comment = await self.prisma.comment.create(
-            data={"userId": userId, "articleId": articleId, "content": content}
+    async def create(self, data: CommentData):
+        return await self.prisma.comment.create(
+            data={
+                "userId": data["user_id"],
+                "articleId": data["article_id"],
+                "content": data["content"],
+            }
         )
-        return CommentResponse.model_validate(new_comment)
 
-    async def update_comment(
-        self, userId: int, id: int, content: str
-    ) -> CommentResponse:
-        updated_comment = await self.prisma.comment.update(
-            where={"id": id, "userId": userId}, data={"content": content}
+    async def update(self, data: CommentData):
+        return await self.prisma.comment.update(
+            where={"id": data["comment_id"], "userId": data["user_id"]},
+            data={"content": data["content"]},
         )
-        return CommentResponse.model_validate(updated_comment)
 
-    async def delete_comment(self, userId: int, id: int) -> None:
-        await self.prisma.comment.delete(where={"id": id, "userId": userId})
+    async def delete(self, user_id: int, comment_id: int):
+        return await self.prisma.comment.delete(
+            where={"id": comment_id, "userId": user_id}
+        )

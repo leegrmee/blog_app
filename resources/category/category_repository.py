@@ -1,108 +1,62 @@
 from config.Connection import prisma_connection
-from resources.schemas.response import CategoryResponse, ArticleResponse
 
 
 class CategoryRepository:
     def __init__(self):
         self.prisma = prisma_connection.prisma
 
-    # 모든 카테고리 조회
-    async def get_all_categories(self) -> list[CategoryResponse]:
-        categories = await self.prisma.category.find_many(
+    async def find_all(self) -> list:
+        return await self.prisma.category.find_many(
             include={"articles": {"include": {"article": True}}}
         )
 
-        result = [
-            CategoryResponse(
-                id=cat.id,
-                name=cat.name,
-                articles=[
-                    ArticleResponse.model_validate(cat_to_article.article)
-                    for cat_to_article in cat.articles
-                ],
-            )
-            for cat in categories
-        ]
-        return result
-
-    # 특정 ID의 카테고리 조회
-    async def get_category_by_id(self, id: int) -> CategoryResponse | None:
-        category = await self.prisma.category.find_unique(
+    async def find_by_id(self, id: int):
+        return await self.prisma.category.find_unique(
             where={"id": id}, include={"articles": {"include": {"article": True}}}
         )
-        if category:
-            return CategoryResponse(
-                id=category.id,
-                name=category.name,
-                articles=[
-                    ArticleResponse.model_validate(cat_to_article.article)
-                    for cat_to_article in category.articles
-                ],
-            )
 
-        else:
-            return None
-
-    # 특정 게시글의 카테고리 조회
-    async def get_categories_of_article(self, articleId: int) -> list[CategoryResponse]:
-        categories = await self.prisma.categorytoarticle.find_many(
-            where={"articleId": articleId}, include={"category": True}
+    async def find_by_article_id(self, article_id: int):
+        return await self.prisma.category.find_many(
+            where={"articles": {"some": {"article_id": article_id}}}
         )
-        return [CategoryResponse.model_validate(cat.category) for cat in categories]
 
-    # 게시글의 카테고리 업데이트
-    async def update_article_categories(
-        self, articleId: int, categoryIds: list[int]
-    ) -> None:
-        await self.prisma.categorytoarticle.delete_many(where={"articleId": articleId})
-        new_connections = [
-            {"articleId": articleId, "categoryId": catId} for catId in categoryIds
-        ]
-        await self.prisma.categorytoarticle.create_many(data=new_connections)
-
-    # 카테고리 별 게시물
-    async def get_articles_by_category(self, categoryId: int) -> list[ArticleResponse]:
-        articles = await self.prisma.article.find_many(
-            where={"categories": {"some": {"categoryId": categoryId}}},
-            include={"user": True},
+    # 카테고리에 속한 게시물 찾기
+    async def find_articles_by_category(self, category_id: int):
+        return await self.prisma.article.find_many(
+            where={"categories": {"some": {"category_id": category_id}}}
         )
-        return [ArticleResponse.model_validate(article) for article in articles]
 
-    async def get_user_categories_with_articles(
-        self, userId: int
-    ) -> list[CategoryResponse]:
-        categories = await self.prisma.category.find_many(
-            where={"articles": {"some": {"article": {"userId": userId}}}},
+    # prism client py 에서 select 대신 include 사용
+
+    # 유저가 쓴 게시물에 속한 카테고리 찾기
+    async def find_by_user_id(self, user_id: int):
+        return await self.prisma.category.find_many(
+            where={"articles": {"some": {"article": {"user_id": user_id}}}},
             include={
                 "articles": {
                     "include": {"article": True},
-                    "where": {"article": {"userId": userId}},
+                    "where": {"article": {"user_id": user_id}},
                 }
             },
         )
 
-        result = [
-            CategoryResponse(
-                id=category.id,
-                name=category.name,
-                articles=[
-                    ArticleResponse.model_validate(cat_to_article.article)
-                    for cat_to_article in category.articles
-                ],
-            )
-            for category in categories
-        ]
-        return result
-
-    # 게시글에서 특정 카테고리 제거
-    async def remove_category_from_article(self, articleId: int, categoryId: int):
-        await self.prisma.categorytoarticle.delete(
+    async def delete(self, article_id: int, category_id: int):
+        await self.prisma.category_to_article.delete(
             where={
-                "articleId_categoryId": {
-                    "articleId": articleId,
-                    "categoryId": categoryId,
+                "article_id_category_id": {
+                    "article_id": article_id,
+                    "category_id": category_id,
                 }
             }
         )
 
-        # Prisma에서는 복합 키(@@id([articleId, categoryId]))로 정의된 경우, delete 메서드에서 where 조건을 { "field1_field2": {"field1": value1, "field2": value2} } 형태로 지정
+    async def update(self, article_id: int, category_ids: list[int]):
+        await self.prisma.category_to_article.delete_many(
+            where={"article_id": article_id}
+        )
+        if category_ids:
+            new_connections = [
+                {"article_id": article_id, "category_id": cat_id}
+                for cat_id in category_ids
+            ]
+            await self.prisma.category_to_article.create_many(data=new_connections)

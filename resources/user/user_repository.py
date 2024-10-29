@@ -7,19 +7,19 @@ class UserRepository:
     def __init__(self):
         self.prisma = prisma_connection.prisma
 
-    def find_many(self) -> list[User]:
-        return self.prisma.user.find_many(
+    async def find_many(self):
+        return await self.prisma.user.find_many(
             include={"articles": True, "comments": True, "likes": True}
         )
 
-    def find_one_by_id(self, id: int) -> Optional[User]:
-        return self.prisma.user.find_unique(
+    async def find_one_by_id(self, id: int):
+        return await self.prisma.user.find_unique(
             where={"id": id},
             include={"articles": True, "comments": True, "likes": True},
         )
 
-    def find_one_by_email(self, user_email: str) -> Optional[User]:
-        return self.prisma.user.find_unique(
+    async def find_one_by_email(self, user_email: str):
+        return await self.prisma.user.find_unique(
             where={"email": user_email},
             include={"articles": True, "comments": True, "likes": True},
         )
@@ -32,11 +32,11 @@ class UserRepository:
             data={
                 "username": username,
                 "email": email,
-                "hashed_password": hashed_password,
+                "hashedpassword": hashed_password,
             }
         )
 
-    def update_password(self, email: str, hashed_password: str):
-        return self.prisma.user.update(
-            where={"email": email}, data={"hashed_password": hashed_password}
+    async def update_password(self, email: str, hashed_password: str):
+        return await self.prisma.user.update(
+            where={"email": email}, data={"hashedpassword": hashed_password}
         )

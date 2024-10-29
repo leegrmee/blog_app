@@ -1,139 +1,103 @@
-from fastapi import HTTPException, status
-from datetime import datetime
-
-from resources.category.category_repository import CategoryRepository
-from .article_repository import ArticleRepository
-from ..schemas.response import ArticleResponse
+from .article_repository import ArticleRepository, SearchParams, UpdateParams
 
 
 class ArticleService:
     def __init__(self):
         self.article_repository = ArticleRepository()
-        self.category_repository = CategoryRepository()
 
-    async def get_all_articles(
-        self, user_id: int, skip: int, limit: int
-    ) -> list[ArticleResponse]:
-        return await self.article_repository.get_all_articles(
+    async def find_many(self, user_id: int, skip: int, limit: int):
+        articles = await self.article_repository.find_many(
             user_id=user_id, skip=skip, limit=limit
         )
 
-    async def get_article_by_article_id(self, article_id: int) -> ArticleResponse:
-        article = await self.article_repository.get_article_by_article_id(
-            articleId=article_id
-        )
+        # 각 article의 응답 형식 변환
+        return [
+            {
+                **article.model_dump(),
+                "categories": (
+                    [cat.category.id for cat in article.categories]
+                    if article.categories
+                    else []
+                ),
+            }
+            for article in articles
+        ]
+
+    async def find_by_id(self, article_id: int):
+        article = await self.article_repository.find_by_id(article_id=article_id)
+
         if article is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Article with id: {article_id} does not exist",
-            )
-        # 특정 게시물을 조회 할 때 조회수 증가
-        updated_article = await self.article_repository.increment_views(
-            articleId=article_id
+            return None
+
+        # id 로 조회할 때마다 조회수 증가
+        updated_article = await self.article_repository.increment_view_count(
+            article_id=article_id
         )
-        if updated_article is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update view count",
-            )
 
-        return updated_article
+        categories = (
+            [cat.category.id for cat in updated_article.categories]
+            if updated_article.categories
+            else []
+        )
+        article_dict = {**updated_article.model_dump(), "categories": categories}
 
-    async def create_article(
+        return article_dict
+
+    async def create(
         self, user_id: int, title: str, content: str, category_ids: list[int]
-    ) -> ArticleResponse:
-
-        new_article = await self.article_repository.create_article(
-            userId=user_id,
+    ):
+        new_article = await self.article_repository.create(
+            user_id=user_id,
             title=title,
             content=content,
+            category_ids=category_ids,
         )
 
-        if category_ids:
-            await self.category_repository.update_article_categories(
-                articleId=new_article.id, categoryIds=category_ids
-            )
-
-        return new_article
-
-    async def delete_article(self, article_id: int, user_id: int):
-
-        article = await self.article_repository.get_article_by_articleid(
-            articleId=article_id
+        categories = (
+            [cat.category.id for cat in new_article.categories]
+            if new_article.categories
+            else []
         )
+        article_dict = {**new_article.model_dump(), "categories": categories}
+        return article_dict
+
+    async def delete(self, article_id: int, user_id: int):
+        article = await self.article_repository.find_by_id(article_id=article_id)
         if article == None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Article with id: {article_id} does not exist",
-            )
-
+            return None
         if article.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to perform requested action",
-            )
+            return None
         # 게시물 삭제
-        deleted_count = await self.article_repository.delete_article(
-            articleId=article_id
-        )
+        deleted_article = await self.article_repository.delete(article_id=article_id)
 
-        if deleted_count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Article with id: {article_id} could not be deleted",
-            )
+        if deleted_article == 0:
+            return (f"Article with id: {article_id} could not be deleted",)
 
-        return {"message": f"Article of {article_id} deleted"}
+        return {f"Article of {article_id} deleted"}
 
-    async def update_article(
-        self,
-        article_id: int,
-        user_id: int,
-        new_title: str | None,
-        new_content: str | None,
-        new_categories: list[int] | None,
-    ) -> ArticleResponse:
-
-        article = await self.article_repository.get_article_by_articleid(
-            articleId=article_id
+    async def update(self, request: UpdateParams):
+        article = await self.article_repository.find_by_id(
+            article_id=request.article_id
         )
         if article is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Article with id: {article_id} does not exist",
-            )
-        if article.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to perform requested action",
-            )
+            return (f"Article with id: {request.article_id} does not exist",)
 
-        updated_article = await self.article_repository.update_article(
-            articleId=article_id,
-            new_title=new_title,
-            new_content=new_content,
-            new_categories=new_categories,
-        )
+        if article.user_id != request.user_id:
+            return ("Not authorized to perform requested action",)
 
+        updated_article = await self.article_repository.update(params=request)
         return updated_article
 
-    async def search_articles(
-        self,
-        category_id: int | None,
-        user_id: int | None,
-        created_date: datetime | None,
-        updated_date: datetime | None,
-        skip: int = 0,
-        limit: int = 10,
-    ) -> list[ArticleResponse]:
-
-        result = await self.article_repository.search_articles(
-            categoryId=category_id,
-            userId=user_id,
-            createdAt=created_date,
-            updatedAt=updated_date,
-            skip=skip,
-            limit=limit,
-        )
-
-        return result
+    async def search(self, request: SearchParams):
+        articles = await self.article_repository.search(params=request)
+        return [
+            {
+                **article.model_dump(),
+                "categories": (
+                    [cat.category_id for cat in article.categories]
+                    if article.categories
+                    else []
+                ),
+            }
+            for article in articles
+        ]
