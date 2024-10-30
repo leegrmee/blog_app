@@ -1,9 +1,11 @@
 from .article_repository import ArticleRepository, SearchParams, UpdateParams
+from ..like.like_repository import LikeRepository
 
 
 class ArticleService:
     def __init__(self):
         self.article_repository = ArticleRepository()
+        self.like_repository = LikeRepository()
 
     async def find_many(self, user_id: int, skip: int, limit: int):
         articles = await self.article_repository.find_many(
@@ -15,10 +17,11 @@ class ArticleService:
             {
                 **article.model_dump(),
                 "categories": (
-                    [cat.category.id for cat in article.categories]
+                    [cat.category_id for cat in article.categories]
                     if article.categories
                     else []
                 ),
+                "likes_count": len(article.likes) if article.likes else 0,
             }
             for article in articles
         ]
@@ -35,11 +38,18 @@ class ArticleService:
         )
 
         categories = (
-            [cat.category.id for cat in updated_article.categories]
+            [cat.category_id for cat in updated_article.categories]
             if updated_article.categories
             else []
         )
-        article_dict = {**updated_article.model_dump(), "categories": categories}
+
+        likes_count = await self.like_repository.count(article_id=article_id)
+
+        article_dict = {
+            **updated_article.model_dump(),
+            "categories": categories,
+            "likes_count": likes_count,
+        }
 
         return article_dict
 
@@ -58,7 +68,12 @@ class ArticleService:
             if new_article.categories
             else []
         )
-        article_dict = {**new_article.model_dump(), "categories": categories}
+
+        article_dict = {
+            **new_article.model_dump(),
+            "categories": categories,
+            "likes_count": 0,
+        }
         return article_dict
 
     async def delete(self, article_id: int, user_id: int):
@@ -86,7 +101,21 @@ class ArticleService:
             return ("Not authorized to perform requested action",)
 
         updated_article = await self.article_repository.update(params=request)
-        return updated_article
+
+        # 카테고리 처리
+        categories = (
+            [cat.category_id for cat in updated_article.categories]
+            if updated_article.categories
+            else []
+        )
+
+        article_dict = {
+            **updated_article.model_dump(),
+            "categories": categories,
+            "likes_count": len(article.likes) if article.likes else 0,
+        }
+
+        return article_dict
 
     async def search(self, request: SearchParams):
         articles = await self.article_repository.search(params=request)
@@ -98,6 +127,7 @@ class ArticleService:
                     if article.categories
                     else []
                 ),
+                "likes_count": len(article.likes) if article.likes else 0,
             }
             for article in articles
         ]

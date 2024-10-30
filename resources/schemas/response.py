@@ -45,15 +45,23 @@ class TokenData(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
+class LikeResponse(BaseModel):
+    user_id: int = Field(..., alias="userId")
+    article_id: int = Field(..., alias="articleId")
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
 class ArticleResponse(BaseModel):
     id: int
     user_id: int
     title: str | None = None
     content: str | None = None
-    categories: list[int] | None = Field(default_factory=list)
     views: int | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
+    categories: list[int] | None = Field(default_factory=list)
+    likes_count: int = 0
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -73,13 +81,6 @@ class CategoryResponse(BaseModel):
     id: int
     name: str
     articles: list[ArticleResponse] | None = []
-
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
-
-
-class LikeResponse(BaseModel):
-    user_id: int = Field(..., alias="userId")
-    article_id: int = Field(..., alias="articleId")
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 

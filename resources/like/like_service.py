@@ -22,8 +22,9 @@ class LikeService:
             if found_like:
                 return f"You have alredy liked post: {article_id}"
 
-            await self.like_repository.add(article_id=article_id, user_id=user_id)
-            return "successfully added like"
+            else:
+                await self.like_repository.add(article_id=article_id, user_id=user_id)
+                return "successfully added like"
 
         else:
             if not found_like:

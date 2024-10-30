@@ -32,7 +32,11 @@ class ArticleRepository:
             skip=skip,
             take=limit,
             order={"created_at": "desc"},
-            include={"user": True, "categories": {"include": {"category": True}}},
+            include={
+                "user": True,
+                "categories": {"include": {"category": True}},
+                "likes": True,
+            },
         )
 
     async def find_by_id(self, article_id: int):
@@ -45,7 +49,11 @@ class ArticleRepository:
         return await self.prisma.article.update(
             where={"id": article_id},
             data={"views": {"increment": 1}},
-            include={"user": True},
+            include={
+                "user": True,
+                "categories": {"include": {"category": True}},
+                "likes": True,
+            },
         )
 
     async def search(self, params: SearchParams):
@@ -63,7 +71,7 @@ class ArticleRepository:
             where=filters,
             skip=params.skip,
             take=params.limit,
-            include={"user": True, "categories": True},
+            include={"user": True, "categories": True, "likes": True},
         )
 
     async def create(
@@ -110,6 +118,7 @@ class ArticleRepository:
             update_data["title"] = params.title
         if params.content is not None:
             update_data["content"] = params.content
+        # 카테고리 업뎃은 전부 다 다시 설정해야함
         if params.categories is not None:
             update_data["categories"] = {
                 "deleteMany": {},
@@ -122,7 +131,11 @@ class ArticleRepository:
         updated_article = await self.prisma.article.update(
             where={"id": article.id},
             data=update_data,
-            include={"user": True, "categories": {"include": {"category": True}}},
+            include={
+                "user": True,
+                "categories": {"include": {"category": True}},
+                "likes": True,
+            },
         )
 
         return updated_article
