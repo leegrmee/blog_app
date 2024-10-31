@@ -20,12 +20,6 @@ class CategoryRepository:
             where={"articles": {"some": {"article_id": article_id}}}
         )
 
-    # 카테고리에 속한 게시물 찾기
-    async def find_articles_by_category(self, category_id: int):
-        return await self.prisma.article.find_many(
-            where={"categories": {"some": {"category_id": category_id}}}
-        )
-
     # prism client py 에서 select 대신 include 사용
 
     # 유저가 쓴 게시물에 속한 카테고리 찾기

@@ -85,8 +85,22 @@ class CategoryResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
+class CategoryInfo(BaseModel):
+    id: int
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class CategoryToArticleResponse(BaseModel):
-    article_id: int = Field(..., alias="articleId")
-    category_id: int = Field(..., alias="categoryId")
+    article_id: int
+    categories: list[CategoryInfo]  # dict 대신 list[CategoryInfo]로 변경
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class UserCatArticleResponse(BaseModel):
+    user_id: int
+    categories_with_articles: list[CategoryResponse]
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)

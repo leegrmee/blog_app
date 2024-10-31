@@ -38,41 +38,16 @@ class CategoryService:
             article_id=article_id
         )
 
-        result = [
-            {
-                "article_id": article_id,
-                "categories": [
-                    {
-                        "id": category.id,
-                        "name": category.name,
-                    }
-                    for category in categories
-                ],
-            }
-        ]
-
-        return result
-
-    async def find_articles_by_category(self, category_id: int):
-        """특정 카테고리의 게시글 조회"""
-        articles = await self.category_repository.find_articles_by_category(category_id)
-        result = [
-            {
-                "category_id": category_id,
-                "articles": [
-                    {
-                        "id": article.id,
-                        "title": article.title,
-                        "content": article.content,
-                        "views": article.views,
-                        "created_at": article.created_at,
-                        "updated_at": article.updated_at,
-                        "user_id": article.user_id,
-                    }
-                    for article in articles
-                ],
-            }
-        ]
+        result = {
+            "article_id": article_id,
+            "categories": [
+                {
+                    "id": category.id,
+                    "name": category.name,
+                }
+                for category in categories
+            ],
+        }
 
         return result
 
@@ -80,16 +55,20 @@ class CategoryService:
         """사용자가 선택한 카테고리 및 카테고리별 작성한 게시글 조회"""
         categories = await self.category_repository.find_by_user_id(user_id=user_id)
 
-        result = [
-            {
-                "id": category.id,
-                "name": category.name,
-                "articles": [
-                    cat_to_article.article for cat_to_article in category.articles
-                ],
-            }
-            for category in categories
-        ]
+        result = {
+            "user_id": user_id,
+            "categories_with_articles": [
+                {
+                    "id": category.id,
+                    "name": category.name,
+                    "articles": [
+                        cat_to_article.article for cat_to_article in category.articles
+                    ],
+                }
+                for category in categories
+            ],
+        }
+
         return result
 
     async def delete(self, article_id: int, category_id: int):

@@ -1,5 +1,4 @@
-from fastapi import APIRouter, status, Depends, HTTPException
-from typing import Optional
+from fastapi import APIRouter, Depends, status
 
 from resources.user.user_service import UserService
 
