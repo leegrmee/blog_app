@@ -7,6 +7,11 @@ class ArticleService:
         self.article_repository = ArticleRepository()
         self.like_repository = LikeRepository()
 
+    # 메소드 이름 앞의 언더스코어(_)는 이 메소드가 클래스/모듈 내부에서만 사용되는 private 메소드임
+    def _get_category_ids(self, categories):
+        """카테고리 객체 리스트에서 카테고리 ID 리스트를 추출하는 헬퍼 메소드"""
+        return [cat.category_id for cat in categories] if categories else []
+
     async def find_many(self, user_id: int, skip: int, limit: int):
         articles = await self.article_repository.find_many(
             user_id=user_id, skip=skip, limit=limit
@@ -16,12 +21,8 @@ class ArticleService:
         return [
             {
                 **article.model_dump(),
-                "categories": (
-                    [cat.category_id for cat in article.categories]
-                    if article.categories
-                    else []
-                ),
-                "likes_count": len(article.likes) if article.likes else 0,
+                "categories": self._get_category_ids(article.categories),
+                "likes_count": await self.like_repository.count(article_id=article.id),
             }
             for article in articles
         ]
@@ -36,13 +37,7 @@ class ArticleService:
         updated_article = await self.article_repository.increment_view_count(
             article_id=article_id
         )
-
-        categories = (
-            [cat.category_id for cat in updated_article.categories]
-            if updated_article.categories
-            else []
-        )
-
+        categories = self._get_category_ids(updated_article.categories)
         likes_count = await self.like_repository.count(article_id=article_id)
 
         article_dict = {
@@ -63,11 +58,7 @@ class ArticleService:
             category_ids=category_ids,
         )
 
-        categories = (
-            [cat.category.id for cat in new_article.categories]
-            if new_article.categories
-            else []
-        )
+        categories = self._get_category_ids(new_article.categories)
 
         article_dict = {
             **new_article.model_dump(),
@@ -103,31 +94,24 @@ class ArticleService:
         updated_article = await self.article_repository.update(params=request)
 
         # 카테고리 처리
-        categories = (
-            [cat.category_id for cat in updated_article.categories]
-            if updated_article.categories
-            else []
-        )
-
+        categories = self._get_category_ids(updated_article.categories)
+        likes_count = await self.like_repository.count(article_id=updated_article.id)
         article_dict = {
             **updated_article.model_dump(),
             "categories": categories,
-            "likes_count": len(article.likes) if article.likes else 0,
+            "likes_count": likes_count,
         }
 
         return article_dict
 
     async def search(self, request: SearchParams):
         articles = await self.article_repository.search(params=request)
+
         return [
             {
                 **article.model_dump(),
-                "categories": (
-                    [cat.category_id for cat in article.categories]
-                    if article.categories
-                    else []
-                ),
-                "likes_count": len(article.likes) if article.likes else 0,
+                "categories": self._get_category_ids(article.categories),
+                "likes_count": await self.like_repository.count(article_id=article.id),
             }
             for article in articles
         ]
