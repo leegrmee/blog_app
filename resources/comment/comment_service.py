@@ -2,6 +2,7 @@ from resources.comment.comment_repository import (
     CommentRepository,
     CommentFilters,
     CommentData,
+    UpdateCommentData,
 )
 
 
@@ -18,15 +19,10 @@ class CommentService:
     async def create(self, request: CommentData):
         return await self.comment_repository.create(request)
 
-    async def update(self, request: CommentData):
-        return await self.comment_repository.update(request)
+    async def update(self, request: UpdateCommentData):
 
-    async def delete(self, user_id: int, comment_id: int):
-        delete_comment = await self.comment_repository.find_by_id(comment_id)
+        data = UpdateCommentData(id=request.id, new_content=request.new_content)
+        return await self.comment_repository.update(data)
 
-        if not delete_comment:
-            return f"Comment with id:{comment_id} not found"
-
-        return await self.comment_repository.delete(
-            user_id=user_id, comment_id=comment_id
-        )
+    async def delete(self, comment_id: int):
+        return await self.comment_repository.delete(comment_id=comment_id)

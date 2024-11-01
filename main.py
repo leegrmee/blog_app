@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException, status
 from resources.user.user_controller import router as user_router
 from resources.article.article_controller import router as article_router
 from resources.category.category_controller import router as category_router
@@ -8,6 +8,7 @@ from resources.like.like_controller import router as like_router
 from resources.auth.auth_controller import router as auth_router
 from config.Connection import prisma_connection
 import logging
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,6 +26,7 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# 라우터 등록
 app.include_router(user_router)
 app.include_router(article_router)
 app.include_router(category_router)

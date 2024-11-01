@@ -92,16 +92,6 @@ class ArticleRepository:
             include={"user": True, "categories": {"include": {"category": True}}},
         )
 
-    async def add_categories(self, article_id: int, category_ids: list[int]):
-        return await self.prisma.category_to_article.create(
-            data={
-                [
-                    {"category_id": cat_id, "article_id": article_id}
-                    for cat_id in category_ids
-                ]
-            },
-        )
-
     async def delete(self, article_id: int):
         article = await self.prisma.article.find_unique(where={"id": article_id})
         if not article:

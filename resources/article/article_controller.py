@@ -20,9 +20,26 @@ async def get_articles_handler(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required"
         )
 
-    return await article_service.find_many(
+    articles = await article_service.find_many(
         user_id=current_user.id, skip=skip, limit=limit
     )
+
+    return [
+        ArticleResponse(
+            id=article.id,
+            user_id=article.user_id,
+            title=article.title,
+            content=article.content,
+            views=article.views,
+            created_at=article.created_at,
+            updated_at=article.updated_at,
+            categories=article_service.get_category_ids(article.categories),
+            likes_count=await article_service.like_repository.count(
+                article_id=article.id
+            ),
+        )
+        for article in articles
+    ]
 
 
 @router.get("/{article_id}", status_code=status.HTTP_200_OK)
@@ -43,7 +60,17 @@ async def get_article_handler(
             detail=f"Article with id {article_id} not found",
         )
 
-    return article
+    return ArticleResponse(
+        id=article.id,
+        user_id=article.user_id,
+        title=article.title,
+        content=article.content,
+        views=article.views,
+        created_at=article.created_at,
+        updated_at=article.updated_at,
+        categories=article_service.get_category_ids(article.categories),
+        likes_count=await article_service.like_repository.count(article_id=article.id),
+    )
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -57,19 +84,24 @@ async def create_article_handler(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required"
         )
 
-    try:
-        new_article = await article_service.create(
-            user_id=current_user.id,
-            title=article.title,
-            content=article.content,
-            category_ids=article.select_categories,
-        )
-        return new_article
+    new_article = await article_service.create(
+        user_id=current_user.id,
+        title=article.title,
+        content=article.content,
+        category_ids=article.select_categories,
+    )
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    return ArticleResponse(
+        id=new_article.id,
+        user_id=new_article.user_id,
+        title=new_article.title,
+        content=new_article.content,
+        views=new_article.views,
+        created_at=new_article.created_at,
+        updated_at=new_article.updated_at,
+        categories=article_service.get_category_ids(new_article.categories),
+        likes_count=0,
+    )
 
 
 @router.put("/{article_id}", status_code=status.HTTP_200_OK)
@@ -79,25 +111,35 @@ async def update_article_handler(
     article_service: ArticleService = Depends(),
     current_user: User | None = Depends(get_current_user),
 ) -> ArticleResponse:
-
     if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required"
         )
 
-    try:
-        update_params = update_article.to_update_data(
-            article_id=article_id, user_id=current_user.id
+    update_params = update_article.to_update_data(
+        article_id=article_id, user_id=current_user.id
+    )
+
+    updated_article = await article_service.update(update_params)
+    if not updated_article:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Article with id {article_id} not found or not authorized",
         )
 
-        updated_article = await article_service.update(update_params)
-
-        return updated_article
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    return ArticleResponse(
+        id=updated_article.id,
+        user_id=updated_article.user_id,
+        title=updated_article.title,
+        content=updated_article.content,
+        views=updated_article.views,
+        created_at=updated_article.created_at,
+        updated_at=updated_article.updated_at,
+        categories=article_service.get_category_ids(updated_article.categories),
+        likes_count=await article_service.like_repository.count(
+            article_id=updated_article.id
+        ),
+    )
 
 
 @router.delete("/{article_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -115,9 +157,12 @@ async def delete_article_handler(
         article_id=article_id, user_id=current_user.id
     )
     if result is None:
-        return {f"Article with id {article_id} not found"}
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Article with id {article_id} not found or not authorized",
+        )
 
-    return {f"Article with id {article_id} deleted"}
+    return {"detail": f"Article with id {article_id} deleted"}
 
 
 @router.post("/search", status_code=status.HTTP_200_OK)
@@ -126,16 +171,26 @@ async def search_articles_handler(
     article_service: ArticleService = Depends(),
     current_user: User | None = Depends(get_current_user),
 ) -> list[ArticleResponse]:
-
     if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required"
         )
 
-    try:
-        return await article_service.search(search_params)
+    articles = await article_service.search(search_params)
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    return [
+        ArticleResponse(
+            id=article.id,
+            user_id=article.user_id,
+            title=article.title,
+            content=article.content,
+            views=article.views,
+            created_at=article.created_at,
+            updated_at=article.updated_at,
+            categories=article_service.get_category_ids(article.categories),
+            likes_count=await article_service.like_repository.count(
+                article_id=article.id
+            ),
+        )
+        for article in articles
+    ]

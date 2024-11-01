@@ -16,43 +16,42 @@ class CommentFilters(TypedDict, total=False):
     user_id: int | None
 
 
+@dataclass
+class UpdateCommentData(TypedDict):
+    id: int
+    new_content: str
+
+
 class CommentRepository:
     def __init__(self):
         self.prisma = prisma_connection.prisma
 
     async def find_by_id(self, comment_id: int):
-        return await self.prisma.comment.find_unique(
-            where={"id": comment_id}, include={"user": True, "article": True}
-        )
+        return await self.prisma.comment.find_unique(where={"id": comment_id})
 
     async def find_by_filters(self, filters: CommentFilters):
         where_clause = {}
         if filters.get("article_id"):
-            where_clause["articleId"] = filters["article_id"]
+            where_clause["article_id"] = filters["article_id"]
         if filters.get("user_id"):
-            where_clause["userId"] = filters["user_id"]
+            where_clause["user_id"] = filters["user_id"]
 
-        comments = await self.prisma.comment.find_many(
-            where=where_clause, include={"user": True, "article": True}
-        )
-        return comments
+        return await self.prisma.comment.find_many(where=where_clause)
 
     async def create(self, data: CommentData):
         return await self.prisma.comment.create(
             data={
-                "userId": data["user_id"],
-                "articleId": data["article_id"],
+                "user_id": data["user_id"],
+                "article_id": data["article_id"],
                 "content": data["content"],
             }
         )
 
-    async def update(self, data: CommentData):
+    async def update(self, data: UpdateCommentData):
         return await self.prisma.comment.update(
-            where={"id": data["comment_id"], "userId": data["user_id"]},
-            data={"content": data["content"]},
+            where={"id": data["id"]},
+            data={"content": data["new_content"]},
         )
 
-    async def delete(self, user_id: int, comment_id: int):
-        return await self.prisma.comment.delete(
-            where={"id": comment_id, "userId": user_id}
-        )
+    async def delete(self, comment_id: int):
+        return await self.prisma.comment.delete(where={"id": comment_id})

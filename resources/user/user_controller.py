@@ -4,7 +4,7 @@ from resources.user.user_service import UserService
 
 from resources.schemas.request import UserSignupRequest
 
-from resources.schemas.response import User, SignUpResponse
+from resources.schemas.response import User, SignUpResponse, UserResponse
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -19,7 +19,7 @@ async def get_users_handler(user_service: UserService = Depends()) -> list[User]
 @router.get("/{user_id}", status_code=status.HTTP_200_OK)
 async def get_user_by_id_handler(
     user_id: int, user_service: UserService = Depends()
-) -> User | None:
+) -> UserResponse:
     return await user_service.find_one_by_id(user_id)
 
 

@@ -30,6 +30,7 @@ model article {
     views           Int      @default(0)
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt
+    likes_count     Int      @default(0)
 
     user_id         Int
     user            user     @relation(fields: [user_id], references: [id])
@@ -65,7 +66,7 @@ model comment {
     article_id      Int
     user_id         Int
 
-    article         article  @relation(fields: [article_id], references: [id])
+    article         article  @relation(fields: [article_id], references: [id], onDelete: Cascade)
     user            user     @relation(fields: [user_id], references: [id])
 }
 
@@ -76,7 +77,7 @@ model like {
     article_id      Int
     user_id         Int
 
-    article         article  @relation(fields: [article_id], references: [id])
+    article         article  @relation(fields: [article_id], references: [id], onDelete: Cascade)
     user            user     @relation(fields: [user_id], references: [id])
 
     @@id([article_id, user_id])

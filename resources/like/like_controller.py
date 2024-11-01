@@ -19,7 +19,8 @@ async def like_handler(
     )
 
 
-@router.get("/{article_id}")
+# сделать артикл id как квери параметр
+@router.get("/")
 async def count_likes_of_article_handler(
     article_id: int, like_service: LikeService = Depends()
 ):

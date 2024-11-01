@@ -14,7 +14,7 @@ class LikeRepository:
         )
 
     async def remove(self, article_id: int, user_id: int):
-        await self.prisma.like.delete(
+        return await self.prisma.like.delete(
             where={
                 "article_id_user_id": {
                     "article_id": article_id,

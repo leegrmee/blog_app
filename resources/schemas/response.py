@@ -77,10 +77,23 @@ class CommentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
-class CategoryResponse(BaseModel):
+class CommentUpdateResponse(BaseModel):
     id: int
-    name: str
-    articles: list[ArticleResponse] | None = []
+    content: str
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class ArticleToCategory(BaseModel):
+    id: int
+    user_id: int
+    title: str | None = None
+    content: str | None = None
+    views: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    likes_count: int = 0
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -89,18 +102,32 @@ class CategoryInfo(BaseModel):
     id: int
     name: str
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class CategoryResponse(BaseModel):
+    id: int
+    name: str
+    articles: list[ArticleToCategory] | None = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class CategoriesResponse(BaseModel):
+    categories: list[CategoryResponse]
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class CategoryToArticleResponse(BaseModel):
-    article_id: int
-    categories: list[CategoryInfo]  # dict 대신 list[CategoryInfo]로 변경
+    article: ArticleToCategory
+    categories: list[CategoryInfo]
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class UserCatArticleResponse(BaseModel):
     user_id: int
-    categories_with_articles: list[CategoryResponse]
+    categories_with_articles: CategoriesResponse
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
