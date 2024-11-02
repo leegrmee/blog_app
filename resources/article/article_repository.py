@@ -42,7 +42,11 @@ class ArticleRepository:
     async def find_by_id(self, article_id: int):
         return await self.prisma.article.find_unique(
             where={"id": article_id},
-            include={"user": True, "categories": {"include": {"category": True}}},
+            include={
+                "user": True,
+                "categories": {"include": {"category": True}},
+                "likes": True,
+            },
         )
 
     async def increment_view_count(self, article_id: int):
@@ -71,7 +75,11 @@ class ArticleRepository:
             where=filters,
             skip=params.skip,
             take=params.limit,
-            include={"user": True, "categories": True, "likes": True},
+            include={
+                "user": True,
+                "categories": {"include": {"category": True}},
+                "likes": True,
+            },
         )
 
     async def create(
@@ -89,7 +97,11 @@ class ArticleRepository:
                     ]
                 },
             },
-            include={"user": True, "categories": {"include": {"category": True}}},
+            include={
+                "user": True,
+                "categories": {"include": {"category": True}},
+                "likes": True,
+            },
         )
 
     async def delete(self, article_id: int):

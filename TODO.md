@@ -10,10 +10,10 @@
 11/1
 todo 
 1) optimize article controller
-2) refactor category, comment APIs
+2) refactor category, comment APIs (done)
 3) validate responses in controllers via middleware
 
- -> 2 done
+ 
  11/2
  todo
  1) optimize article controller
