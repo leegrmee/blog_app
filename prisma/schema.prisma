@@ -31,6 +31,7 @@ model article {
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt
     likes_count     Int      @default(0)
+    files_count     Int      @default(0)
 
     user_id         Int
     user            user     @relation(fields: [user_id], references: [id])
@@ -38,6 +39,7 @@ model article {
     comments        comment[]
     likes           like[]
     categories      category_to_article[]
+    files           file[]
 }
 
 model category {
@@ -81,4 +83,16 @@ model like {
     user            user     @relation(fields: [user_id], references: [id])
 
     @@id([article_id, user_id])
+}
+
+model file {
+    id              Int      @id @default(autoincrement())
+    url             String
+    filename        String
+    mimetype        String
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt
+
+    article_id      Int
+    article         article  @relation(fields: [article_id], references: [id], onDelete: Cascade)
 }

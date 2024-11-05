@@ -16,5 +16,10 @@ todo
  
  11/2
  todo
- 1) optimize article controller
+ 1) optimize article controller(done)
  2) validate responses in controllers via middleware
+
+ 11/5
+ 1) middleware
+ 2) files 
+ 3) add role 
