@@ -31,7 +31,6 @@ model article {
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt
     likes_count     Int      @default(0)
-    files_count     Int      @default(0)
 
     user_id         Int
     user            user     @relation(fields: [user_id], references: [id])
@@ -46,7 +45,7 @@ model category {
     id              Int      @id @default(autoincrement())
     name            String
 
-    articles      category_to_article[]
+    articles        category_to_article[]
 }
 
 model category_to_article {
@@ -87,7 +86,7 @@ model like {
 
 model file {
     id              Int      @id @default(autoincrement())
-    url             String
+    path            String
     filename        String
     mimetype        String
     created_at      DateTime @default(now())

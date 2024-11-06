@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from typing import TypedDict
 from config.Connection import prisma_connection
-from dataclasses import dataclass
 
 
 @dataclass

@@ -21,5 +21,10 @@ todo
 
  11/5
  1) middleware
- 2) files 
+ 2) files (in progress)
+ 3) add role 
+
+ 11/6
+ 1) middleware
+ 2) files (API, local storage - DONE)
  3) add role 

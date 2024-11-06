@@ -62,6 +62,7 @@ class ArticleResponse(BaseModel):
     updated_at: datetime | None = None
     categories: list[int] | None = Field(default_factory=list)
     likes_count: int = 0
+    files: list[str] | None = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -129,5 +130,11 @@ class CategoryToArticleResponse(BaseModel):
 class UserCatArticleResponse(BaseModel):
     user_id: int
     categories_with_articles: CategoriesResponse
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class FileUploadResponse(BaseModel):
+    urls: list[str]
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)

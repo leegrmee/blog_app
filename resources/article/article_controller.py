@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Query, Depends, HTTPException
+from fastapi import APIRouter, status, Depends, UploadFile, Query, Form, File
 
 from resources.schemas.request import ArticleCreate, ArticleUpdate, ArticleSearch
 from resources.schemas.response import ArticleResponse, User
@@ -39,19 +39,28 @@ async def get_article_handler(
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_article_handler(
-    article: ArticleCreate,
+    title: str = Form(...),
+    content: str = Form(...),
+    select_categories: str = Form(...),
+    files: list[UploadFile] = File(None),
     article_service: ArticleService = Depends(),
-    current_user: User | None = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ) -> ArticleResponse:
 
-    new_article = await article_service.create(
-        user_id=current_user.id,
-        title=article.title,
-        content=article.content,
-        category_ids=article.select_categories,
-    )
+    # Parse select_categories into a list of integers
+    category_ids = [
+        int(id.strip()) for id in select_categories.split(",") if id.strip().isdigit()
+    ]
 
-    return new_article
+    # Call the service layer with the parsed data
+    article = await article_service.create(
+        user_id=current_user.id,
+        title=title,
+        content=content,
+        category_ids=category_ids,
+        files=files,
+    )
+    return article
 
 
 @router.put("/", status_code=status.HTTP_200_OK)

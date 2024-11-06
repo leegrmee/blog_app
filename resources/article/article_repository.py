@@ -36,6 +36,7 @@ class ArticleRepository:
                 "user": True,
                 "categories": {"include": {"category": True}},
                 "likes": True,
+                "files": True,
             },
         )
 
@@ -46,6 +47,7 @@ class ArticleRepository:
                 "user": True,
                 "categories": {"include": {"category": True}},
                 "likes": True,
+                "files": True,
             },
         )
 
@@ -79,6 +81,7 @@ class ArticleRepository:
                 "user": True,
                 "categories": {"include": {"category": True}},
                 "likes": True,
+                "files": True,
             },
         )
 
@@ -137,6 +140,7 @@ class ArticleRepository:
                 "user": True,
                 "categories": {"include": {"category": True}},
                 "likes": True,
+                "files": True,
             },
         )
 

@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
 from datetime import datetime
+
+from pydantic import BaseModel, Field
+from fastapi import Form
 from resources.comment.comment_repository import CommentData
 from resources.article.article_repository import UpdateParams
 
@@ -30,6 +32,17 @@ class ArticleCreate(BaseModel):
     title: str
     content: str
     select_categories: list[int]
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "title": "Sample Article",
+                "content": "This is a sample article.",
+                "select_categories": [1, 2, 3],
+            }
+        }
+
+    # 파일은 폼데이터로 받고, 나머지는 제이손이기 때문에 충돌 방지를 위해 위와 같이 수정
 
 
 class ArticleUpdate(BaseModel):

@@ -1,17 +1,21 @@
+from fastapi import UploadFile
+from resources.schemas.response import ArticleResponse
+from resources.files.file_service import FileService
 from .article_repository import ArticleRepository, SearchParams, UpdateParams
 from ..like.like_repository import LikeRepository
-from resources.schemas.response import ArticleResponse
 
 
 class ArticleService:
     def __init__(self):
         self.article_repository = ArticleRepository()
         self.like_repository = LikeRepository()
+        self.file_service = FileService()
 
     async def find_many(self, user_id: int, skip: int, limit: int):
         articles = await self.article_repository.find_many(
             user_id=user_id, skip=skip, limit=limit
         )
+
         return [self._process_article(article) for article in articles]
 
     async def find_by_id(self, article_id: int):
@@ -23,15 +27,25 @@ class ArticleService:
         await self.article_repository.increment_view_count(article_id=article_id)
 
     async def create(
-        self, user_id: int, title: str, content: str, category_ids: list[int]
+        self,
+        user_id: int,
+        title: str,
+        content: str,
+        category_ids: list[int],
+        files: list[UploadFile] | None = None,
     ):
+
         article = await self.article_repository.create(
             user_id=user_id,
             title=title,
             content=content,
             category_ids=category_ids,
         )
-        return self._process_article(article)
+        if files:
+            await self.file_service.upload(article_id=article.id, files=files)
+
+        article_info = await self.article_repository.find_by_id(article_id=article.id)
+        return self._process_article(article_info)
 
     async def update(self, params: UpdateParams):
         article = await self.article_repository.update(params)
@@ -57,9 +71,17 @@ class ArticleService:
         # Extract category IDs
         categories = [item.category.id for item in article.categories]
 
+        file_urls = []
+        for file in article.files:
+            file_url = f"/files/{file.id}"
+            file_urls.append(file_url)
+        # article의 files 필드에 파일 URL 리스트 할당
+        files = file_urls
+
         # Remove unnecessary data
         del article.likes
         del article.categories
+        del article.files
 
         # Return processed article
         return ArticleResponse(
@@ -72,4 +94,5 @@ class ArticleService:
             updated_at=article.updated_at,
             categories=categories,
             likes_count=article.likes_count,
+            files=files,
         )
