@@ -1,25 +1,32 @@
-from fastapi import APIRouter, status, Depends, Query, Body, Path
+from fastapi import APIRouter, Depends, Query
 
 from resources.schemas.request import CommentCreate, CommentUpdate
 from resources.comment.comment_service import CommentService
-from resources.schemas.response import User, CommentResponse, CommentUpdateResponse
+from resources.schemas.response import (
+    User,
+    CommentResponse,
+    CommentUpdateResponse,
+    UserRole,
+)
 from resources.auth.auth_service import get_current_user
+from resources.auth.role_dependency import require_minimum_role
 
 router = APIRouter(prefix="/comments", tags=["Comments"])
 
 
 @router.get("/")
-async def get_comments_by_id_handler(
-    comment_id: int,
+async def get_comments_handler(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=30),
     comment_service: CommentService = Depends(),
-) -> CommentResponse:
-    return await comment_service.find_by_id(comment_id)
+) -> list[CommentResponse]:
+    return await comment_service.find_many(skip=skip, limit=limit)
 
 
 @router.get("/by-filters")
 async def get_comments_by_filters_handler(
-    article_id: int | None,
-    user_id: int | None,
+    article_id: int | None = None,
+    user_id: int | None = None,
     comment_service: CommentService = Depends(),
 ) -> list[CommentResponse]:
 
@@ -34,10 +41,10 @@ async def create_comment_handler(
     article_id: int,
     comment: CommentCreate,
     comment_service: CommentService = Depends(),
-    current_user: User | None = Depends(get_current_user),
+    authorized_user: User | None = Depends(require_minimum_role(UserRole.AUTHOR)),
 ) -> CommentResponse:
     comment_data = comment.to_comment_data(
-        user_id=current_user.id, article_id=article_id
+        user_id=authorized_user.id, article_id=article_id
     )
     new_comment = await comment_service.create(comment_data)
 
@@ -50,7 +57,8 @@ async def update_comment_handler(
     comment_service: CommentService = Depends(),
     current_user: User | None = Depends(get_current_user),
 ) -> CommentUpdateResponse:
-    updated_comment = await comment_service.update(new_comment)
+    new_comment = new_comment.to_comment_data(user_id=current_user.id)
+    updated_comment = await comment_service.update(new_comment, current_user)
     return updated_comment
 
 
@@ -60,7 +68,9 @@ async def delete_comment_handler(
     comment_service: CommentService = Depends(),
     current_user: User | None = Depends(get_current_user),
 ):
-    deleted_comment = await comment_service.delete(comment_id=comment_id)
+    deleted_comment = await comment_service.delete(
+        comment_id, current_user=current_user
+    )
     if deleted_comment is None:
         return f"Comment with id:{comment_id} not found"
 

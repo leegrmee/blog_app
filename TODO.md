@@ -28,3 +28,7 @@ todo
  1) middleware
  2) files (API, local storage - DONE)
  3) add role 
+
+11/7
+ 2) files - s3 
+ 3) add role 

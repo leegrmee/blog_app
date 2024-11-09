@@ -4,14 +4,16 @@ from resources.comment.comment_repository import (
     CommentData,
     UpdateCommentData,
 )
+from resources.schemas.response import User, UserRole
+from fastapi import HTTPException
 
 
 class CommentService:
     def __init__(self):
         self.comment_repository = CommentRepository()
 
-    async def find_by_id(self, comment_id: int):
-        return await self.comment_repository.find_by_id(comment_id)
+    async def find_many(self, skip: int = 0, limit: int = 10):
+        return await self.comment_repository.find_many(skip=skip, limit=limit)
 
     async def find_by_filters(self, request: CommentFilters):
         return await self.comment_repository.find_by_filters(request)
@@ -19,10 +21,32 @@ class CommentService:
     async def create(self, request: CommentData):
         return await self.comment_repository.create(request)
 
-    async def update(self, request: UpdateCommentData):
+    async def update(self, request: UpdateCommentData, current_user: User):
+        comment = await self.comment_repository.find_by_id(request["id"])
+        if comment is None:
+            raise HTTPException(status_code=404, detail="Comment not found")
 
-        data = UpdateCommentData(id=request.id, new_content=request.new_content)
-        return await self.comment_repository.update(data)
+        if comment.user_id != current_user.id:
+            raise HTTPException(
+                status_code=403, detail="Insufficient permissions to update the comment"
+            )
 
-    async def delete(self, comment_id: int):
-        return await self.comment_repository.delete(comment_id=comment_id)
+        return await self.comment_repository.update(request)
+
+    async def delete(self, comment_id: int, current_user: User):
+        comment = await self.comment_repository.find_by_id(comment_id)
+        if comment is None:
+            return HTTPException(
+                status_code=404, detail="You are not the author of this comment"
+            )
+
+        if comment.user_id != current_user.id and current_user.role not in [
+            UserRole.MODERATOR,
+            UserRole.ADMIN,
+        ]:
+            raise HTTPException(
+                status_code=403, detail="Insufficient permissions to delete the comment"
+            )
+
+        await self.comment_repository.delete(comment_id=comment_id)
+        return

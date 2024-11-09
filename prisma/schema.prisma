@@ -21,6 +21,7 @@ model user {
     articles         article[]
     comments         comment[]
     likes            like[]
+    files            file[]
 }
 
 model article {
@@ -93,5 +94,8 @@ model file {
     updated_at      DateTime @updatedAt
 
     article_id      Int
+    user_id         Int
+
     article         article  @relation(fields: [article_id], references: [id], onDelete: Cascade)
+    user            user     @relation(fields: [user_id], references: [id])
 }

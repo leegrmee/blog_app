@@ -1,5 +1,5 @@
-from fastapi import UploadFile
-from resources.schemas.response import ArticleResponse
+from fastapi import UploadFile, HTTPException
+from resources.schemas.response import ArticleResponse, UserRole, User
 from resources.files.file_service import FileService
 from .article_repository import ArticleRepository, SearchParams, UpdateParams
 from ..like.like_repository import LikeRepository
@@ -11,10 +11,8 @@ class ArticleService:
         self.like_repository = LikeRepository()
         self.file_service = FileService()
 
-    async def find_many(self, user_id: int, skip: int, limit: int):
-        articles = await self.article_repository.find_many(
-            user_id=user_id, skip=skip, limit=limit
-        )
+    async def find_many(self, skip: int, limit: int):
+        articles = await self.article_repository.find_many(skip=skip, limit=limit)
 
         return [self._process_article(article) for article in articles]
 
@@ -42,22 +40,42 @@ class ArticleService:
             category_ids=category_ids,
         )
         if files:
-            await self.file_service.upload(article_id=article.id, files=files)
+            await self.file_service.upload(
+                article_id=article.id, user_id=user_id, files=files
+            )
 
         article_info = await self.article_repository.find_by_id(article_id=article.id)
         return self._process_article(article_info)
 
-    async def update(self, params: UpdateParams):
-        article = await self.article_repository.update(params)
-        if article:
-            return self._process_article(article)
-        return None
+    async def update(self, params: UpdateParams, current_user: User):
+        article = await self.article_repository.find_by_id(article_id=params.article_id)
+        if not article:
+            raise HTTPException(status_code=404, detail="Article not found")
 
-    async def delete(self, article_id: int, user_id: int):
+        if article.user_id != current_user.id:
+            raise HTTPException(
+                status_code=403, detail="You are not the author of this article"
+            )
+
+        updated_article = await self.article_repository.update(params)
+        return self._process_article(updated_article)
+
+    async def delete(self, article_id: int, current_user: User):
         article = await self.article_repository.find_by_id(article_id=article_id)
-        if article and article.user_id == user_id:
-            return await self.article_repository.delete(article_id=article_id)
-        return None
+        if not article:
+            raise HTTPException(status_code=404, detail="Article not found")
+
+        # Check if the user is the author, moderator, or administrator
+        if article.user_id != current_user.id and current_user.role not in [
+            UserRole.MODERATOR,
+            UserRole.ADMIN,
+        ]:
+            raise HTTPException(
+                status_code=403, detail="Insufficient permissions to delete the article"
+            )
+
+        await self.article_repository.delete(article_id=article_id)
+        return
 
     async def search(self, params: SearchParams):
         articles = await self.article_repository.search(params)

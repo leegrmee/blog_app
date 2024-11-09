@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from resources.schemas.request import UserSignupRequest
-from resources.schemas.response import UserResponse, SignUpResponse, User
+from resources.schemas.response import UserResponse, User, UserRole
 from resources.user.user_repository import UserRepository
 from resources.auth.auth_utils import hash_password
 
@@ -27,14 +27,18 @@ class UserService:
             )
         return user
 
+    async def find_one_by_role(self, role: UserRole):
+        return await self.user_repository.find_one_by_role(role=role)
+
     async def signup(self, request: UserSignupRequest):
         hashed_password = hash_password(request.password)
 
-        # 새 사용자 가입
+        # 새 사용자 가입시 기본 권한 부여
         return await self.user_repository.create(
             username=request.username,
             email=request.email,
             hashed_password=hashed_password,
+            role=UserRole.USER,
         )
 
     async def update_password(self, email: str, new_password: str):
@@ -43,3 +47,8 @@ class UserService:
             email=email, hashed_password=new_hashed_password
         )
         return updated_user
+
+    async def update_role(self, user_id: int, new_role: UserRole):
+        return await self.user_repository.update_role(
+            user_id=user_id, new_role=new_role
+        )

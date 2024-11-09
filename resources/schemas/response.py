@@ -1,12 +1,29 @@
+from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
+
+
+class UserRole(str, Enum):
+    USER = "user"
+    AUTHOR = "author"
+    MODERATOR = "moderator"
+    ADMIN = "admin"
+
+
+# 역할의 계층 정의 (숫자가 클수록 높은 권한)
+ROLE_HIERARCHY = {
+    UserRole.USER: 1,
+    UserRole.AUTHOR: 2,
+    UserRole.MODERATOR: 3,
+    UserRole.ADMIN: 4,
+}
 
 
 class User(BaseModel):
     id: int
     username: str
     email: str
-    role: str
+    role: UserRole
     hashedpassword: str = Field(..., alias="hashedPassword")
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
@@ -16,7 +33,7 @@ class User(BaseModel):
 
 class UserResponse(BaseModel):
     email: str
-    role: str
+    role: UserRole
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 

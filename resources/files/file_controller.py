@@ -17,7 +17,9 @@ async def upload_handler(
     file_service: FileService = Depends(),
     current_user: User = Depends(get_current_user),
 ) -> FileUploadResponse:
-    file_urls = await file_service.upload(article_id=article_id, files=files)
+    file_urls = await file_service.upload(
+        article_id=article_id, user_id=current_user.id, files=files
+    )
     return FileUploadResponse(urls=file_urls)
 
 
@@ -44,7 +46,7 @@ async def delete_handler(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        await file_service.delete(id)
+        await file_service.delete(id, current_user)
         return {"message": f"File with id {id} deleted"}
     except ResourceNotFoundException as e:
         raise HTTPException(

@@ -37,8 +37,6 @@ class CategoryRepository:
             },
         )
 
-    # prism client py 에서 select 대신 include 사용
-
     async def update(self, article_id: int, category_ids: list[int]):
         await self.prisma.category_to_article.delete_many(
             where={"article_id": article_id}

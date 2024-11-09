@@ -24,6 +24,7 @@ class LikeService:
 
             else:
                 await self.like_repository.add(article_id=article_id, user_id=user_id)
+                await self.article_repository.increment_likes_count(article_id)
                 return "successfully added like"
 
         else:
@@ -31,8 +32,12 @@ class LikeService:
                 return "You never liked this post before"
 
             await self.like_repository.remove(article_id=article_id, user_id=user_id)
+            await self.article_repository.decrement_likes_count(article_id)
 
             return "Like cancelled"
 
     async def count_likes(self, article_id: int) -> int:
-        return await self.like_repository.count(article_id)
+        count = await self.like_repository.count(article_id)
+        await self.article_repository.set_likes_count(article_id, count)
+
+        return count

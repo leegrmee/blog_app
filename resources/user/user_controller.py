@@ -1,26 +1,38 @@
 from fastapi import APIRouter, Depends, status
 
 from resources.user.user_service import UserService
-
-from resources.schemas.request import UserSignupRequest
-
-from resources.schemas.response import User, SignUpResponse, UserResponse
+from resources.schemas.request import UserSignupRequest, UpdateUserRoleRequest
+from resources.schemas.response import User, SignUpResponse, UserResponse, UserRole
+from resources.auth.role_dependency import require_minimum_role
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-async def get_users_handler(user_service: UserService = Depends()) -> list[User] | None:
-    # но лучше найти способ использовать
+async def get_users_handler(
+    user_service: UserService = Depends(),
+    authorized_user: User = Depends(require_minimum_role(UserRole.ADMIN)),
+) -> list[User] | None:
     return await user_service.find_many()
 
 
 @router.get("/{user_id}", status_code=status.HTTP_200_OK)
 async def get_user_by_id_handler(
-    user_id: int, user_service: UserService = Depends()
+    user_id: int,
+    user_service: UserService = Depends(),
+    authorized_user: User = Depends(require_minimum_role(UserRole.ADMIN)),
 ) -> UserResponse:
     return await user_service.find_one_by_id(user_id)
+
+
+@router.get("/{role}", status_code=status.HTTP_200_OK)
+async def get_user_by_role_handler(
+    role: UserRole,
+    user_service: UserService = Depends(),
+    authorized_user: User = Depends(require_minimum_role(UserRole.ADMIN)),
+) -> UserResponse:
+    return await user_service.find_one_by_role(role)
 
 
 # 회원가입
@@ -30,3 +42,17 @@ async def user_signup_handler(
     user_service: UserService = Depends(),
 ) -> SignUpResponse:
     return await user_service.signup(request)
+
+
+# 권한 부여
+@router.put("/role", status_code=status.HTTP_200_OK)
+async def update_user_role_handler(
+    user_id: int,
+    request: UpdateUserRoleRequest,
+    user_service: UserService = Depends(),
+    authorized_user: User = Depends(require_minimum_role(UserRole.ADMIN)),
+):
+    updated_user = await user_service.update_role(
+        user_id=user_id, new_role=request.role
+    )
+    return updated_user

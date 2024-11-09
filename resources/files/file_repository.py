@@ -4,6 +4,7 @@ from config.Connection import prisma_connection
 
 @dataclass
 class FileData:
+    user_id: int
     path: str
     filename: str
     mimetype: str
@@ -22,6 +23,7 @@ class FileRepository:
                 "filename": file.filename,
                 "mimetype": file.mimetype,
                 "article_id": file.article_id,
+                "user_id": file.user_id,
             }
         )
         return created_file.id
@@ -30,6 +32,7 @@ class FileRepository:
         file = await self.prisma.file.find_unique(where={"id": id})
         if file:
             return FileData(
+                user_id=file.user_id,
                 path=file.path,
                 filename=file.filename,
                 mimetype=file.mimetype,

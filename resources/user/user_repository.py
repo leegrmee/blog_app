@@ -1,5 +1,4 @@
-from typing import Optional
-from resources.schemas.response import User
+from resources.schemas.response import UserRole
 from config.Connection import prisma_connection
 
 
@@ -24,19 +23,34 @@ class UserRepository:
             include={"articles": True, "comments": True, "likes": True},
         )
 
-    async def create(self, username: str, email: str, hashed_password: str):
-        prevUser = await self.find_one_by_email(email)
-        if prevUser:
+    async def find_one_by_role(self, role: UserRole):
+        return await self.prisma.user.find_first(
+            where={"role": role.value},
+            include={"articles": True, "comments": True, "likes": True},
+        )
+
+    async def create(
+        self, username: str, email: str, hashed_password: str, role: UserRole
+    ):
+        prev_user = await self.find_one_by_email(email)
+        if prev_user:
             raise Exception("Email already exists")
         return await self.prisma.user.create(
             data={
                 "username": username,
                 "email": email,
                 "hashedpassword": hashed_password,
+                "role": role.value,  # Enum 값을 문자열로 저장
             }
         )
 
     async def update_password(self, email: str, hashed_password: str):
         return await self.prisma.user.update(
             where={"email": email}, data={"hashedpassword": hashed_password}
+        )
+
+    async def update_role(self, user_id: int, new_role: UserRole):
+        return await self.prisma.user.update(
+            where={"id": user_id},
+            data={"role": new_role.value},
         )

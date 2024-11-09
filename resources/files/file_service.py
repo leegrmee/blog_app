@@ -1,11 +1,13 @@
 import os
 import uuid
-from fastapi import UploadFile, File
+from fastapi import UploadFile, File, HTTPException
 from aiofiles import open as aiofiles_open
 
 from .file_repository import FileRepository
 from .file_repository import FileData
+from ..article.article_repository import ArticleRepository
 from ..exceptions import ResourceNotFoundException
+from ..schemas.response import User, UserRole
 
 UPLOAD_DIR = "uploads"
 if not os.path.exists(UPLOAD_DIR):
@@ -15,13 +17,24 @@ if not os.path.exists(UPLOAD_DIR):
 class FileService:
     def __init__(self):
         self.file_repository = FileRepository()
+        self.article_repository = ArticleRepository()
 
     async def upload(
         self,
         article_id: int,
+        user_id: int,
         files: list[UploadFile] = File(None),
     ) -> list[str]:
         # upload file to database
+
+        article = await self.article_repository.find_by_id(article_id)
+        if not article:
+            raise ResourceNotFoundException(detail="Article not found")
+
+        if article.user_id != user_id:
+            raise HTTPException(
+                status_code=403, detail="You are not the author of this article"
+            )
 
         if not files:
             raise ResourceNotFoundException(detail="No files provided")
@@ -43,6 +56,7 @@ class FileService:
                 continue  # 에러 발생 시 해당 파일 건너뛰기
 
             file_data = FileData(
+                user_id=user_id,
                 path=file_path,
                 filename=unique_filename,
                 mimetype=file.content_type,
@@ -62,9 +76,19 @@ class FileService:
 
         raise ResourceNotFoundException(detail="File not found")
 
-    async def delete(self, id: int):
-        if not await self.file_repository.get_file(id):
+    async def delete(self, id: int, current_user: User):
+        file = await self.file_repository.get_file(id)
+
+        if not file:
             raise ResourceNotFoundException(detail="File not found")
+
+        if file.user_id != current_user.id and current_user.role not in [
+            UserRole.MODERATOR,
+            UserRole.ADMIN,
+        ]:
+            raise HTTPException(
+                status_code=403, detail="Insufficient permissions to delete the article"
+            )
 
         await self.file_repository.delete(id)
 
@@ -72,6 +96,5 @@ class FileService:
         file = await self.file_repository.get_file(id)
         if not file:
             raise ResourceNotFoundException(detail="File not found")
-
         # file_stat = os.stat(file.path)
         return {**file.__dict__}

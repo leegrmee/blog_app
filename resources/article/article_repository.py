@@ -26,9 +26,8 @@ class ArticleRepository:
     def __init__(self):
         self.prisma = prisma_connection.prisma
 
-    async def find_many(self, user_id: int, skip: int, limit: int):
+    async def find_many(self, skip: int, limit: int):
         return await self.prisma.article.find_many(
-            where={"user_id": user_id},
             skip=skip,
             take=limit,
             order={"created_at": "desc"},
@@ -60,6 +59,23 @@ class ArticleRepository:
                 "categories": {"include": {"category": True}},
                 "likes": True,
             },
+        )
+
+    async def increment_likes_count(self, article_id: int):
+        return await self.prisma.article.update(
+            where={"id": article_id},
+            data={"likes_count": {"increment": 1}},
+        )
+
+    async def decrement_likes_count(self, article_id: int):
+        return await self.prisma.article.update(
+            where={"id": article_id},
+            data={"likes_count": {"decrement": 1}},
+        )
+
+    async def set_likes_count(self, article_id: int, count: int):
+        await self.prisma.article.update(
+            where={"id": article_id}, data={"likes_count": count}
         )
 
     async def search(self, params: SearchParams):

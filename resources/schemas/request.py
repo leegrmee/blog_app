@@ -1,10 +1,9 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field
-from fastapi import Form
-from resources.comment.comment_repository import CommentData
+from resources.comment.comment_repository import CommentData, UpdateCommentData
 from resources.article.article_repository import UpdateParams
-
+from resources.schemas.response import UserRole
 
 # 필드를 완전히 선택적으로 만들려면 기본값(= None)을 지정해야 합니다.!!!!
 
@@ -19,6 +18,10 @@ class UserSignupRequest(BaseModel):
 class UserLoginRequest(BaseModel):
     email: str
     password: str  # 해시 전
+
+
+class UpdateUserRoleRequest(BaseModel):
+    role: UserRole
 
 
 class PasswordUpdateRequest(BaseModel):
@@ -80,6 +83,11 @@ class CommentCreate(BaseModel):
 class CommentUpdate(BaseModel):
     id: int
     new_content: str
+
+    def to_comment_data(self, user_id: int) -> UpdateCommentData:
+        return UpdateCommentData(
+            user_id=user_id, id=self.id, new_content=self.new_content
+        )
 
 
 # LIKE--------------

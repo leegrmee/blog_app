@@ -12,12 +12,13 @@ class CommentData(TypedDict):
 
 @dataclass
 class CommentFilters(TypedDict, total=False):
-    article_id: int | None
-    user_id: int | None
+    article_id: int | None = None
+    user_id: int | None = None
 
 
 @dataclass
 class UpdateCommentData(TypedDict):
+    user_id: int
     id: int
     new_content: str
 
@@ -25,6 +26,9 @@ class UpdateCommentData(TypedDict):
 class CommentRepository:
     def __init__(self):
         self.prisma = prisma_connection.prisma
+
+    async def find_many(self, skip: int = 0, limit: int = 10):
+        return await self.prisma.comment.find_many(skip=skip, take=limit)
 
     async def find_by_id(self, comment_id: int):
         return await self.prisma.comment.find_unique(where={"id": comment_id})
