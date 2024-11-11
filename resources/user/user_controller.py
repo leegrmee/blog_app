@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 
 from resources.user.user_service import UserService
 from resources.schemas.request import UserSignupRequest, UpdateUserRoleRequest
@@ -17,6 +17,15 @@ async def get_users_handler(
     return await user_service.find_many()
 
 
+@router.get("/role", status_code=status.HTTP_200_OK)
+async def get_user_by_role_handler(
+    role: UserRole = Query(..., description="User role"),
+    user_service: UserService = Depends(),
+    authorized_user: User = Depends(require_minimum_role(UserRole.ADMIN)),
+) -> list[UserResponse]:
+    return await user_service.find_by_role(role)
+
+
 @router.get("/{user_id}", status_code=status.HTTP_200_OK)
 async def get_user_by_id_handler(
     user_id: int,
@@ -24,15 +33,6 @@ async def get_user_by_id_handler(
     authorized_user: User = Depends(require_minimum_role(UserRole.ADMIN)),
 ) -> UserResponse:
     return await user_service.find_one_by_id(user_id)
-
-
-@router.get("/{role}", status_code=status.HTTP_200_OK)
-async def get_user_by_role_handler(
-    role: UserRole,
-    user_service: UserService = Depends(),
-    authorized_user: User = Depends(require_minimum_role(UserRole.ADMIN)),
-) -> UserResponse:
-    return await user_service.find_one_by_role(role)
 
 
 # 회원가입
@@ -51,7 +51,7 @@ async def update_user_role_handler(
     request: UpdateUserRoleRequest,
     user_service: UserService = Depends(),
     authorized_user: User = Depends(require_minimum_role(UserRole.ADMIN)),
-):
+) -> User:
     updated_user = await user_service.update_role(
         user_id=user_id, new_role=request.role
     )

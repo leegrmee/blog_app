@@ -28,12 +28,12 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # 라우터 등록
+app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(article_router)
 app.include_router(category_router)
 app.include_router(comment_router)
 app.include_router(like_router)
-app.include_router(auth_router)
 app.include_router(file_router)
 
 

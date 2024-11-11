@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 from resources.comment.comment_repository import CommentData, UpdateCommentData
@@ -66,8 +66,8 @@ class ArticleUpdate(BaseModel):
 class ArticleSearch(BaseModel):
     user_id: int | None = None
     category_id: int | None = None
-    created_date: datetime | None = None
-    updated_date: datetime | None = None
+    created_date: date | None = None
+    updated_date: date | None = None
     skip: int = 0
     limit: int = 10
 

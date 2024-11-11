@@ -17,18 +17,31 @@ todo
  11/2
  todo
  1) optimize article controller(done)
- 2) validate responses in controllers via middleware
 
  11/5
- 1) middleware
  2) files (in progress)
- 3) add role 
 
  11/6
- 1) middleware
  2) files (API, local storage - DONE)
- 3) add role 
+ 3) add role (done)
 
 11/7
- 2) files - s3 
- 3) add role 
+1) add role (done)
+
+
+11/8
+2) files (done)
+3) fix likes count (done)
+
+11/9
+1) postman 
+
+11/11
+1) postman(done)
+2) update article search by date (done)
+
+11/12
+1) postman 
+2) fix article search by date 
+
+

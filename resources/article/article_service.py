@@ -1,8 +1,11 @@
+from datetime import datetime, timedelta
 from fastapi import UploadFile, HTTPException
+
 from resources.schemas.response import ArticleResponse, UserRole, User
 from resources.files.file_service import FileService
 from .article_repository import ArticleRepository, SearchParams, UpdateParams
 from ..like.like_repository import LikeRepository
+from datetime import date
 
 
 class ArticleService:
@@ -78,6 +81,16 @@ class ArticleService:
         return
 
     async def search(self, params: SearchParams):
+        # Create a SearchParams instance
+        params = SearchParams(
+            category_id=params.category_id,
+            user_id=params.user_id,
+            created_date=params.created_date,
+            updated_date=params.updated_date,
+            skip=params.skip,
+            limit=params.limit,
+        )
+
         articles = await self.article_repository.search(params)
         return [self._process_article(article) for article in articles]
 

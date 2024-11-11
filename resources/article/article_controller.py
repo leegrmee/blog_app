@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends, UploadFile, Query, Form, File
+from fastapi import APIRouter, status, Depends, UploadFile, Query, Form, File, Path
 
 from resources.schemas.request import ArticleUpdate, ArticleSearch
 from resources.schemas.response import ArticleResponse, User, UserRole
@@ -78,15 +78,15 @@ async def update_article_handler(
     return updated_article
 
 
-@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_article_handler(
-    article_id: int,
+    id: int = Path(...),
     article_service: ArticleService = Depends(),
     current_user: User = Depends(get_current_user),
-):
+) -> None:
 
-    await article_service.delete(article_id=article_id, current_user=current_user)
-    return {"detail": f"Article with id {article_id} deleted"}
+    await article_service.delete(article_id=id, current_user=current_user)
+    return {"detail": f"Article with id {id} deleted"}
 
 
 @router.post("/search", status_code=status.HTTP_200_OK)

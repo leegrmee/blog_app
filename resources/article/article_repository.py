@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta, timezone
 from config.Connection import prisma_connection
 from dataclasses import dataclass
 
@@ -7,17 +7,17 @@ from dataclasses import dataclass
 class UpdateParams:
     user_id: int
     article_id: int
-    title: str | None
-    content: str | None
-    categories: list[int] | None
+    title: str | None = None
+    content: str | None = None
+    categories: list[int] | None = None
 
 
 @dataclass
 class SearchParams:
-    category_id: int | None
-    user_id: int
-    created_date: datetime | None
-    updated_date: datetime | None
+    category_id: int | None = None
+    user_id: int | None = None
+    created_date: date | None = None
+    updated_date: date | None = None
     skip: int = 0
     limit: int = 10
 
@@ -84,15 +84,32 @@ class ArticleRepository:
             filters["categories"] = {"some": {"category_id": params.category_id}}
         if params.user_id is not None:
             filters["user_id"] = params.user_id
+
         if params.created_date is not None:
-            filters["created_at"] = params.created_date
+            start_datetime = datetime.combine(
+                params.created_date, datetime.min.time()
+            ).replace(tzinfo=timezone.utc)
+            end_datetime = start_datetime + timedelta(days=1)
+            filters["created_at"] = {
+                "gte": start_datetime,
+                "lt": end_datetime,
+            }
+
         if params.updated_date is not None:
-            filters["updated_at"] = params.updated_date
+            start_datetime = datetime.combine(
+                params.updated_date, datetime.min.time()
+            ).replace(tzinfo=timezone.utc)
+            end_datetime = start_datetime + timedelta(days=1)
+            filters["updated_at"] = {
+                "gte": start_datetime,
+                "lt": end_datetime,
+            }
 
         return await self.prisma.article.find_many(
             where=filters,
             skip=params.skip,
             take=params.limit,
+            order={"created_at": "desc"},
             include={
                 "user": True,
                 "categories": {"include": {"category": True}},

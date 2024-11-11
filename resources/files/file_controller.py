@@ -7,10 +7,10 @@ from ..schemas.response import User, FileUploadResponse
 from ..exceptions import ResourceNotFoundException
 
 
-router = APIRouter(prefix="/files", tags=["files"])
+router = APIRouter(prefix="/files", tags=["Files"])
 
 
-@router.post("/upload")
+@router.post("/")
 async def upload_handler(
     article_id: int,
     files: list[UploadFile] = File(None),
@@ -23,13 +23,13 @@ async def upload_handler(
     return FileUploadResponse(urls=file_urls)
 
 
-@router.get("/{id}")
+@router.get("/")
 async def get_handler(id: int, file_service: FileService = Depends()):
     file_path = await file_service.get_path(id)
     return FileResponse(path=file_path)
 
 
-@router.get("/{id}/info")
+@router.get("/info")
 async def get_file_info(id: int, file_service: FileService = Depends()):
     file = await file_service.get_file_info(id)
     return {
@@ -39,7 +39,7 @@ async def get_file_info(id: int, file_service: FileService = Depends()):
     }
 
 
-@router.delete("/{id}")
+@router.delete("/")
 async def delete_handler(
     id: int,
     file_service: FileService = Depends(),

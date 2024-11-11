@@ -7,9 +7,7 @@ class UserRepository:
         self.prisma = prisma_connection.prisma
 
     async def find_many(self):
-        return await self.prisma.user.find_many(
-            include={"articles": True, "comments": True, "likes": True}
-        )
+        return await self.prisma.user.find_many(order={"id": "asc"})
 
     async def find_one_by_id(self, id: int):
         return await self.prisma.user.find_unique(
@@ -18,16 +16,10 @@ class UserRepository:
         )
 
     async def find_one_by_email(self, user_email: str):
-        return await self.prisma.user.find_unique(
-            where={"email": user_email},
-            include={"articles": True, "comments": True, "likes": True},
-        )
+        return await self.prisma.user.find_unique(where={"email": user_email})
 
-    async def find_one_by_role(self, role: UserRole):
-        return await self.prisma.user.find_first(
-            where={"role": role.value},
-            include={"articles": True, "comments": True, "likes": True},
-        )
+    async def find_by_role(self, role: UserRole):
+        return await self.prisma.user.find_many(where={"role": role.value})
 
     async def create(
         self, username: str, email: str, hashed_password: str, role: UserRole

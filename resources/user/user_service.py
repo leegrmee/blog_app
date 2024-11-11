@@ -27,8 +27,8 @@ class UserService:
             )
         return user
 
-    async def find_one_by_role(self, role: UserRole):
-        return await self.user_repository.find_one_by_role(role=role)
+    async def find_by_role(self, role: UserRole):
+        return await self.user_repository.find_by_role(role=role)
 
     async def signup(self, request: UserSignupRequest):
         hashed_password = hash_password(request.password)
