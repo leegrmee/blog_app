@@ -1,11 +1,8 @@
-from datetime import datetime, timedelta
 from fastapi import UploadFile, HTTPException
-
 from resources.schemas.response import ArticleResponse, UserRole, User
 from resources.files.file_service import FileService
 from .article_repository import ArticleRepository, SearchParams, UpdateParams
 from ..like.like_repository import LikeRepository
-from datetime import date
 
 
 class ArticleService:

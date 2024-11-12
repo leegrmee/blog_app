@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI
 from resources.user.user_controller import router as user_router
 from resources.article.article_controller import router as article_router
 from resources.category.category_controller import router as category_router

@@ -62,7 +62,7 @@ async def update_comment_handler(
     return updated_comment
 
 
-@router.delete("/")
+@router.delete("/{comment_id}")
 async def delete_comment_handler(
     comment_id: int,
     comment_service: CommentService = Depends(),

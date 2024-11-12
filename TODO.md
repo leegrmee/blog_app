@@ -41,7 +41,7 @@ todo
 2) update article search by date (done)
 
 11/12
-1) postman 
-2) fix article search by date 
+1) postman (done)
+2) error handling 
 
 

@@ -1,0 +1,13 @@
+__pycache__/
+.env
+.venv
+.python-version
+.DS_Store
+
+# Ignore all files and folders in parent directory
+../*/
+
+
+# 로그 파일
+*.log
+logs/
