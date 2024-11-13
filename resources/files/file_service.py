@@ -1,7 +1,11 @@
 import os
 import uuid
+import boto3
+from botocore.exceptions import BotoCoreError, NoCredentialsError
 from fastapi import UploadFile, File, HTTPException
-from aiofiles import open as aiofiles_open
+import logging
+from config.settings import settings
+
 
 from .file_repository import FileRepository
 from .file_repository import FileData
@@ -18,6 +22,16 @@ class FileService:
     def __init__(self):
         self.file_repository = FileRepository()
         self.article_repository = ArticleRepository()
+        self.s3_client = boto3.client(
+            "s3",
+            region_name=settings.AWS_S3_REGION,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        )
+        self.bucket_name = settings.AWS_S3_BUCKET_NAME
+        self.url = (
+            f"https://{self.bucket_name}.s3.{settings.AWS_S3_REGION}.amazonaws.com/"
+        )
 
     async def upload(
         self,
@@ -26,7 +40,6 @@ class FileService:
         files: list[UploadFile] = File(None),
     ) -> list[str]:
         # upload file to database
-
         article = await self.article_repository.find_by_id(article_id)
         if not article:
             raise ResourceNotFoundException(detail="Article not found")
@@ -43,28 +56,37 @@ class FileService:
         for file in files:
             _, file_extension = os.path.splitext(file.filename)
             unique_filename = f"{uuid.uuid4()}{file_extension}"
-            file_path = os.path.join(UPLOAD_DIR, unique_filename)
 
             try:
-                # 파일 저장 (비동기로 처리)
-                async with aiofiles_open(file_path, "wb") as buffer:
-                    content = await file.read()
-                    await buffer.write(content)
+                self.s3_client.upload_fileobj(
+                    file.file,
+                    self.bucket_name,
+                    unique_filename,
+                    ExtraArgs={
+                        "ContentType": file.content_type,
+                    },
+                )
+                file_url = f"{self.url}{unique_filename}"
 
-            except Exception as e:
-                print(e)
+                file_data = FileData(
+                    user_id=user_id,
+                    path=unique_filename,
+                    filename=file.filename,
+                    mimetype=file.content_type,
+                    article_id=article_id,
+                )
+                file_id = await self.file_repository.upload(file_data)
+                logging.info("Uploaded file with id:%s", file_id)
+                file_urls.append(file_url)
+
+                # # 파일 저장 (비동기로 처리)
+                # async with aiofiles_open(file_path, "wb") as buffer:
+                #     content = await file.read()
+                #     await buffer.write(content)
+
+            except (BotoCoreError, NoCredentialsError) as e:
+                logging.error(f"Error uploading file {file.filename}: {e}")
                 continue  # 에러 발생 시 해당 파일 건너뛰기
-
-            file_data = FileData(
-                user_id=user_id,
-                path=file_path,
-                filename=unique_filename,
-                mimetype=file.content_type,
-                article_id=article_id,
-            )
-            file_id = await self.file_repository.upload(file_data)
-            file_url = f"/files/{file_id}"
-            file_urls.append(file_url)
 
         return file_urls
 
@@ -72,7 +94,7 @@ class FileService:
         file = await self.file_repository.get_file(id)
 
         if file:
-            return file.path
+            return f"{self.url}{file.path}"
 
         raise ResourceNotFoundException(detail="File not found")
 
@@ -90,7 +112,15 @@ class FileService:
                 status_code=403, detail="Insufficient permissions to delete the article"
             )
 
-        await self.file_repository.delete(id)
+        try:
+            self.s3_client.delete_object(Bucket=self.bucket_name, Key=file.path)
+            await self.file_repository.delete(id)
+
+        except (BotoCoreError, NoCredentialsError) as e:
+            logging.error(f"Error deleting file {id} from S3: {e}")
+            raise HTTPException(
+                status_code=500, detail="Failed to delete the file from S3"
+            )
 
     async def get_file_info(self, id: int):
         file = await self.file_repository.get_file(id)

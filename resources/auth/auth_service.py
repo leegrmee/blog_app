@@ -83,7 +83,6 @@ class AuthService:
             user = await self.user_repository.find_one_by_email(
                 user_email=token_data.user_email
             )
-            logging.info(f"User lookup result: {user}")  # 로깅 추가
 
             if user is None:
                 logging.error(f"No user found for email: {token_data.user_email}")

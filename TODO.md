@@ -42,6 +42,10 @@ todo
 
 11/12
 1) postman (done)
-2) error handling 
+2) s3 (done)
+
+11/13
+1) error handling 
+
 
 

@@ -1,14 +1,17 @@
 from dataclasses import dataclass
 from config.Connection import prisma_connection
+from datetime import datetime
+from dataclasses import field
 
 
 @dataclass
 class FileData:
     user_id: int
-    path: str
+    path: str  # s3 key저장
     filename: str
     mimetype: str
     article_id: int
+    upload_time: datetime = field(default_factory=datetime.datetime)
 
 
 class FileRepository:
@@ -16,7 +19,7 @@ class FileRepository:
         self.prisma = prisma_connection.prisma
 
     async def upload(self, file: FileData):
-        # upload file to database
+        # upload file to database/ file path = s3 key
         created_file = await self.prisma.file.create(
             data={
                 "path": file.path,
@@ -24,6 +27,8 @@ class FileRepository:
                 "mimetype": file.mimetype,
                 "article_id": file.article_id,
                 "user_id": file.user_id,
+                "upload_time": file.upload_time,
+                "file_size": file.file_size,
             }
         )
         return created_file.id

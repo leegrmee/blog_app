@@ -35,7 +35,7 @@ async def get_file_info(id: int, file_service: FileService = Depends()):
     return {
         "filename": file["filename"],
         "mimetype": file["mimetype"],
-        "download_url": f"/files/{id}",
+        "download_url": f"/files/?id={id},
     }
 
 
