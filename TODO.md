@@ -47,5 +47,7 @@ todo
 11/13
 1) error handling 
 
+11/14
+1) error handling 
 
 
