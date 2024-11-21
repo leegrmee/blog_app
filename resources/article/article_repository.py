@@ -1,6 +1,9 @@
 from datetime import date, datetime, timedelta, timezone
 from config.Connection import prisma_connection
 from dataclasses import dataclass
+from exceptions import NotFoundException, DatabaseException, InvalidInputException
+import logging
+from prisma.errors import PrismaError
 
 
 @dataclass
@@ -21,6 +24,10 @@ class SearchParams:
     skip: int = 0
     limit: int = 10
 
+    def validate(self) -> bool:
+        # Implement validation logic if necessary
+        return True
+
 
 class ArticleRepository:
     def __init__(self):
@@ -40,7 +47,7 @@ class ArticleRepository:
         )
 
     async def find_by_id(self, article_id: int):
-        return await self.prisma.article.find_unique(
+        article = await self.prisma.article.find_unique(
             where={"id": article_id},
             include={
                 "user": True,
@@ -49,6 +56,10 @@ class ArticleRepository:
                 "files": True,
             },
         )
+
+        if not article:
+            raise NotFoundException(name=f"Article with id {article_id}")
+        return article
 
     async def increment_view_count(self, article_id: int):
         return await self.prisma.article.update(
@@ -79,6 +90,9 @@ class ArticleRepository:
         )
 
     async def search(self, params: SearchParams):
+        if not params.validate():
+            raise InvalidInputException(detail="Invalid search parameters.")
+
         filters = {}
         if params.category_id is not None:
             filters["categories"] = {"some": {"category_id": params.category_id}}
@@ -121,35 +135,38 @@ class ArticleRepository:
     async def create(
         self, user_id: int, title: str, content: str, category_ids: list[int]
     ):
-        return await self.prisma.article.create(
-            data={
-                "user_id": user_id,
-                "title": title,
-                "content": content,
-                "categories": {
-                    "create": [
-                        {"category": {"connect": {"id": cat_id}}}
-                        for cat_id in category_ids
-                    ]
+        async with self.prisma.transaction():
+            article = await self.prisma.article.create(
+                data={
+                    "user_id": user_id,
+                    "title": title,
+                    "content": content,
+                    "categories": {
+                        "create": [
+                            {"category": {"connect": {"id": cat_id}}}
+                            for cat_id in category_ids
+                        ],
+                    },
                 },
-            },
-            include={
-                "user": True,
-                "categories": {"include": {"category": True}},
-                "likes": True,
-            },
-        )
+                include={
+                    "user": True,
+                    "categories": {"include": {"category": True}},
+                    "likes": True,
+                },
+            )
+        return article
 
     async def delete(self, article_id: int):
         article = await self.prisma.article.find_unique(where={"id": article_id})
         if not article:
-            return None
-        return await self.prisma.article.delete(where={"id": article_id})
+            raise NotFoundException(name=f"Article with id {article_id}")
+        await self.prisma.article.delete(where={"id": article_id})
+        return True
 
     async def update(self, params: UpdateParams):
         article = await self.prisma.article.find_unique(where={"id": params.article_id})
         if not article:
-            return None
+            raise NotFoundException(name=f"Article with id {params.article_id}")
 
         update_data = {}
         if params.title is not None:
@@ -176,5 +193,4 @@ class ArticleRepository:
                 "files": True,
             },
         )
-
         return updated_article
