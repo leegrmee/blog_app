@@ -1,9 +1,9 @@
-from fastapi import APIRouter, status, Depends, HTTPException, Body
 import logging
+from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from resources.auth.auth_utils import verify_password
-from resources.schemas.request import UserLoginRequest, PasswordUpdateRequest
-from resources.schemas.response import JWTResponse, UserResponse, User
+from resources.schemas.request import PasswordUpdateRequest
+from resources.schemas.response import JWTResponse, User
 from resources.user.user_service import UserService
 from resources.auth.auth_service import get_current_user, auth_service
 
@@ -18,7 +18,7 @@ async def user_login_handler(
 ):
 
     user: User | None = await user_service.find_one_by_email(user_credentials.username)
-    # user_credentials.username - Oauth2 에서 제공하는 username 은 email 임
+    # user_credentials.username - Oauth2 에서 username 은 email 임
 
     if not user:
         raise HTTPException(

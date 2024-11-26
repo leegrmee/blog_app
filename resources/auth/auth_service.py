@@ -12,6 +12,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 class AuthService:
+    """
+    AuthService is a class that provides authentication and authorization services.
+    It includes methods for
+     - creating access tokens,
+     - verifying access tokens,
+     - retrieving logged-in users.
+    """
+
     def __init__(self):
         self.user_repository = UserRepository()
         self.encoding: str = "UTF-8"
@@ -21,6 +29,8 @@ class AuthService:
         self.jwt_algorithm: str = "HS256"
         self.token_expire_minutes = 30
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        # schemes = ["bcrypt"] : 비밀번호 암호화 알고리즘 /List of algorithms which the instance should support.
+        # deprecated="auto" : 사용되지 않는 알고리즘 자동 처리/ This may also contain a single special value, ["auto"], which will configure the CryptContext instance to deprecate all supported schemes except for the default scheme.
 
     def create_access_token(self, data: Dict[str, Any]) -> str:
         to_encode = data.copy()

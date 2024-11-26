@@ -1,4 +1,4 @@
-"""데이터베이스와 관련이 로직이 없는 유틸리티 함수 분리 """
+"""데이터베이스와 관련이 없는 유틸리티 함수 분리 """
 
 from passlib.context import CryptContext
 
