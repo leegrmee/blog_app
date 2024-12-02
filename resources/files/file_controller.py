@@ -1,10 +1,10 @@
 from fastapi import APIRouter, UploadFile, Depends, HTTPException, File
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 
 from .file_service import FileService
 from ..auth.auth_service import get_current_user
 from ..schemas.response import User, FileUploadResponse
-from ..exceptions import ResourceNotFoundException
+from ..exceptions import NotFoundException
 
 
 router = APIRouter(prefix="/files", tags=["Files"])
@@ -25,8 +25,8 @@ async def upload_handler(
 
 @router.get("/")
 async def get_handler(id: int, file_service: FileService = Depends()):
-    file_path = await file_service.get_path(id)
-    return FileResponse(path=file_path)
+    file_url = await file_service.get_path(id)
+    return RedirectResponse(url=file_url)
 
 
 @router.get("/info")
@@ -48,7 +48,7 @@ async def delete_handler(
     try:
         await file_service.delete(id, current_user)
         return {"message": f"File with id {id} deleted"}
-    except ResourceNotFoundException as e:
+    except NotFoundException as e:
         raise HTTPException(
             status_code=404, detail={"message": f"File with id {id} not found"}
         ) from e

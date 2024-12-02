@@ -4,18 +4,13 @@ import boto3
 from botocore.exceptions import BotoCoreError, NoCredentialsError
 from fastapi import UploadFile, File, HTTPException
 import logging
+
 from config.settings import settings
-
-
 from .file_repository import FileRepository
 from .file_repository import FileData
 from ..article.article_repository import ArticleRepository
-from ..exceptions import ResourceNotFoundException
+from ..exceptions import NotFoundException, BadRequestException
 from ..schemas.response import User, UserRole
-
-UPLOAD_DIR = "uploads"
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR)
 
 
 class FileService:
@@ -42,7 +37,7 @@ class FileService:
         # upload file to database
         article = await self.article_repository.find_by_id(article_id)
         if not article:
-            raise ResourceNotFoundException(detail="Article not found")
+            raise NotFoundException(name="Article")
 
         if article.user_id != user_id:
             raise HTTPException(
@@ -50,7 +45,7 @@ class FileService:
             )
 
         if not files:
-            raise ResourceNotFoundException(detail="No files provided")
+            raise BadRequestException(detail="No files provided")
 
         file_urls = []
         for file in files:
@@ -96,13 +91,13 @@ class FileService:
         if file:
             return f"{self.url}{file.path}"
 
-        raise ResourceNotFoundException(detail="File not found")
+        raise NotFoundException(name="File")
 
     async def delete(self, id: int, current_user: User):
         file = await self.file_repository.get_file(id)
 
         if not file:
-            raise ResourceNotFoundException(detail="File not found")
+            raise NotFoundException(name="File")
 
         if file.user_id != current_user.id and current_user.role not in [
             UserRole.MODERATOR,
@@ -125,6 +120,6 @@ class FileService:
     async def get_file_info(self, id: int):
         file = await self.file_repository.get_file(id)
         if not file:
-            raise ResourceNotFoundException(detail="File not found")
+            raise NotFoundException(name="File")
         # file_stat = os.stat(file.path)
         return {**file.__dict__}
