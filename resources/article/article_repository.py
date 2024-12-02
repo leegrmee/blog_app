@@ -1,9 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 from config.Connection import prisma_connection
 from dataclasses import dataclass
-from exceptions import NotFoundException, DatabaseException, InvalidInputException
-import logging
-from prisma.errors import PrismaError
+from resources.exceptions import NotFoundException, InvalidInputException
 
 
 @dataclass

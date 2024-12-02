@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from config.Connection import prisma_connection
 from datetime import datetime
 from dataclasses import field
+from config.Connection import prisma_connection
 
 
 @dataclass
@@ -11,7 +11,7 @@ class FileData:
     filename: str
     mimetype: str
     article_id: int
-    upload_time: datetime = field(default_factory=datetime.datetime)
+    upload_time: datetime = field(default_factory=datetime.now)
 
 
 class FileRepository:
