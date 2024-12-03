@@ -25,18 +25,8 @@ async def upload_handler(
 
 @router.get("/")
 async def get_handler(id: int, file_service: FileService = Depends()):
-    file_url = await file_service.get_path(id)
+    file_url = await file_service.get_url(id)
     return RedirectResponse(url=file_url)
-
-
-@router.get("/info")
-async def get_file_info(id: int, file_service: FileService = Depends()):
-    file = await file_service.get_file_info(id)
-    return {
-        "filename": file["filename"],
-        "mimetype": file["mimetype"],
-        "download_url": f"/files/?id={id}",
-    }
 
 
 @router.delete("/")
