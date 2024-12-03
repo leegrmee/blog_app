@@ -86,7 +86,12 @@ class ArticleService:
             raise PermissionDeniedException(
                 detail="Insufficient permissions to delete the article."
             )
+
+        # Fetch associated file IDs
+        file_ids = [file.id for file in article.files]
         await self.article_repository.delete(article_id=article_id)
+        for file_id in file_ids:
+            await self.file_service.delete(id=file_id, current_user=current_user)
 
     def _process_article(self, article):
         """Process article data"""
