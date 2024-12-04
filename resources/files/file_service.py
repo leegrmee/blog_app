@@ -72,6 +72,10 @@ class FileService:
             unique_filename = f"{uuid.uuid4()}{file_extension}"
 
             try:
+                file.file.seek(0, os.SEEK_END)
+                file_size = file.file.tell()
+                file.file.seek(0)
+
                 self.s3_client.upload_fileobj(
                     file.file,
                     self.bucket_name,
@@ -90,6 +94,7 @@ class FileService:
                     filename=file.filename,
                     mimetype=file.content_type,
                     article_id=article_id,
+                    size=file_size,
                 )
                 await self.file_repository.upload(file_data)
                 logging.info("Uploaded file with id:%s", unique_filename)
