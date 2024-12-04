@@ -92,6 +92,7 @@ model file {
     mimetype        String
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt
+    size            Int      @default(0)
 
     article_id      Int
     user_id         Int

@@ -12,6 +12,7 @@ class FileData:
     mimetype: str
     article_id: int
     upload_time: datetime = field(default_factory=datetime.now)
+    size: int = 0
 
 
 class FileRepository:
@@ -28,7 +29,7 @@ class FileRepository:
                 "article_id": file.article_id,
                 "user_id": file.user_id,
                 "upload_time": file.upload_time,
-                "file_size": file.file_size,
+                "size": file.file_size,
             }
         )
         return created_file.id
@@ -42,6 +43,7 @@ class FileRepository:
                 filename=file.filename,
                 mimetype=file.mimetype,
                 article_id=file.article_id,
+                size=file.file_size,
             )
 
         return None
