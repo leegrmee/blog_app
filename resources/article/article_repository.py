@@ -133,8 +133,8 @@ class ArticleRepository:
     async def create(
         self, user_id: int, title: str, content: str, category_ids: list[int]
     ):
-        async with self.prisma.transaction():
-            article = await self.prisma.article.create(
+        async with self.prisma.tx() as transaction:
+            article = await transaction.article.create(
                 data={
                     "user_id": user_id,
                     "title": title,
