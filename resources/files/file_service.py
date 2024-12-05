@@ -94,7 +94,7 @@ class FileService:
                     filename=file.filename,
                     mimetype=file.content_type,
                     article_id=article_id,
-                    size=file_size,
+                    size=file.size,
                 )
                 await self.file_repository.upload(file_data)
                 logging.info("Uploaded file with id:%s", unique_filename)
