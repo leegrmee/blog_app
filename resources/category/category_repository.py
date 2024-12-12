@@ -54,8 +54,8 @@ class CategoryRepository:
 
     async def update(self, article_id: int, category_ids: list[int]):
         try:
-            async with self.prisma.transaction():
-                await self.prisma.category_to_article.delete_many(
+            async with self.prisma.tx() as transaction:
+                await transaction.category_to_article.delete_many(
                     where={"article_id": article_id}
                 )
                 if category_ids:
@@ -63,7 +63,7 @@ class CategoryRepository:
                         {"article_id": article_id, "category_id": cat_id}
                         for cat_id in category_ids
                     ]
-                    await self.prisma.category_to_article.create_many(
+                    await transaction.category_to_article.create_many(
                         data=new_connections
                     )
         except PrismaError as e:
