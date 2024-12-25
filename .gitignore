@@ -17,3 +17,7 @@ TODO.md
 backup.sql
 
 myblog1234512345_accessKeys.csv
+
+# Python 캐시 파일 무시
+__pycache__/
+*.pyc
