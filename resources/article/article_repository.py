@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 from config.Connection import prisma_connection
 from dataclasses import dataclass
-from resources.exceptions import NotFoundException, InvalidInputException
+from resources.exceptions import NotFoundException
 
 
 @dataclass
@@ -15,6 +15,11 @@ class UpdateParams:
 
 @dataclass
 class SearchParams:
+    """While SearchParams is similar to ArticleSearch, transforming the Pydantic model into a dataclass (or any other internal representation) can be useful for:
+    Decoupling Layers: Keeping the repository layer independent from Pydantic (and FastAPI) specifics.
+    Data Transformation: Preparing data in a format that's optimal for the repository's operations.
+    """
+
     category_id: int | None = None
     user_id: int | None = None
     created_date: date | None = None
@@ -22,17 +27,13 @@ class SearchParams:
     skip: int = 0
     limit: int = 10
 
-    def validate(self) -> bool:
-        # Implement validation logic if necessary
-        return True
-
 
 class ArticleRepository:
     def __init__(self):
-        self.prisma = prisma_connection.prisma
+        self._prisma = prisma_connection.prisma
 
     async def find_many(self, skip: int, limit: int):
-        return await self.prisma.article.find_many(
+        return await self._prisma.article.find_many(
             skip=skip,
             take=limit,
             order={"created_at": "desc"},
@@ -45,7 +46,7 @@ class ArticleRepository:
         )
 
     async def find_by_id(self, article_id: int):
-        article = await self.prisma.article.find_unique(
+        article = await self._prisma.article.find_unique(
             where={"id": article_id},
             include={
                 "user": True,
@@ -60,7 +61,7 @@ class ArticleRepository:
         return article
 
     async def increment_view_count(self, article_id: int):
-        return await self.prisma.article.update(
+        return await self._prisma.article.update(
             where={"id": article_id},
             data={"views": {"increment": 1}},
             include={
@@ -71,26 +72,23 @@ class ArticleRepository:
         )
 
     async def increment_likes_count(self, article_id: int):
-        return await self.prisma.article.update(
+        return await self._prisma.article.update(
             where={"id": article_id},
             data={"likes_count": {"increment": 1}},
         )
 
     async def decrement_likes_count(self, article_id: int):
-        return await self.prisma.article.update(
+        return await self._prisma.article.update(
             where={"id": article_id},
             data={"likes_count": {"decrement": 1}},
         )
 
     async def set_likes_count(self, article_id: int, count: int):
-        await self.prisma.article.update(
+        await self._prisma.article.update(
             where={"id": article_id}, data={"likes_count": count}
         )
 
     async def search(self, params: SearchParams):
-        if not params.validate():
-            raise InvalidInputException(detail="Invalid search parameters.")
-
         filters = {}
         if params.category_id is not None:
             filters["categories"] = {"some": {"category_id": params.category_id}}
@@ -117,7 +115,7 @@ class ArticleRepository:
                 "lt": end_datetime,
             }
 
-        return await self.prisma.article.find_many(
+        return await self._prisma.article.find_many(
             where=filters,
             skip=params.skip,
             take=params.limit,
@@ -133,7 +131,7 @@ class ArticleRepository:
     async def create(
         self, user_id: int, title: str, content: str, category_ids: list[int]
     ):
-        async with self.prisma.tx() as transaction:
+        async with self._prisma.tx() as transaction:
             article = await transaction.article.create(
                 data={
                     "user_id": user_id,
@@ -155,14 +153,16 @@ class ArticleRepository:
         return article
 
     async def delete(self, article_id: int):
-        article = await self.prisma.article.find_unique(where={"id": article_id})
+        article = await self._prisma.article.find_unique(where={"id": article_id})
         if not article:
             raise NotFoundException(name=f"Article with id {article_id}")
-        await self.prisma.article.delete(where={"id": article_id})
+        await self._prisma.article.delete(where={"id": article_id})
         return True
 
     async def update(self, params: UpdateParams):
-        article = await self.prisma.article.find_unique(where={"id": params.article_id})
+        article = await self._prisma.article.find_unique(
+            where={"id": params.article_id}
+        )
         if not article:
             raise NotFoundException(name=f"Article with id {params.article_id}")
 
@@ -181,7 +181,7 @@ class ArticleRepository:
                 ],
             }
 
-        updated_article = await self.prisma.article.update(
+        updated_article = await self._prisma.article.update(
             where={"id": article.id},
             data=update_data,
             include={
