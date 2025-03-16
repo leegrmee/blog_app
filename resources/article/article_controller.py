@@ -1,10 +1,10 @@
 from fastapi import APIRouter, status, Depends, UploadFile, Query, Form, File, Path
 
-from resources.schemas.request import ArticleUpdate, ArticleSearch
-from resources.schemas.response import ArticleResponse, User, UserRole
-from resources.article.article_service import ArticleService
-from resources.auth.auth_service import get_current_user
-from resources.auth.role_dependency import require_minimum_role
+from ..schemas.request import ArticleUpdate, ArticleSearch
+from ..schemas.response import ArticleResponse, User, UserRole
+from ..article.article_service import ArticleService
+from ..auth.auth_service import get_current_user
+from ..auth.role_dependency import require_minimum_role
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
 
@@ -30,8 +30,6 @@ async def get_article_handler(
 ) -> ArticleResponse:
 
     article = await article_service.find_by_id(article_id=article_id)
-    if not article:
-        return {"message": f"Article with id {article_id} not found"}
 
     return article
 
