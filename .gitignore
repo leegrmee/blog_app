@@ -1,20 +1,24 @@
+
+# Python
 __pycache__/
 *.pyc
 .env
 .venv
 .python-version
+
+# System files
 .DS_Store
 
-# Ignore all files and folders in parent directory
-../*/
-
-
-# 로그 파일
+# Logs
 *.log
 logs/
 
-TODO.md
-
+# Database
 backup.sql
 
+# Other
+TODO.md
 myblog1234512345_accessKeys.csv
+
+# Parent directory
+../*/
