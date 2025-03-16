@@ -68,8 +68,8 @@ class ArticleSearch(BaseModel):
     category_id: int | None = None
     created_date: date | None = None
     updated_date: date | None = None
-    skip: int = 0
-    limit: int = 10
+    skip: int = Field(default=0, ge=0)
+    limit: int = Field(default=10, ge=1, le=100)
 
 
 # COMMENT--------------
