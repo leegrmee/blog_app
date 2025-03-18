@@ -1,26 +1,50 @@
+# Python cache files
 
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+*.pyc
 .env
 .venv
+env/
+venv/
+ENV/
+
+# Python-specific
 .python-version
 
 # System files
+
+# System files
 .DS_Store
+Thumbs.db
+
+# IDE files (common)
+.idea/
+.vscode/
+*.sublime-*
+
+# Log files
 
 # Logs
 *.log
 logs/
 
+# Project specific
+TODO.md
+overview.md
 # Database
 backup.sql
 
 # Other
 TODO.md
 myblog1234512345_accessKeys.csv
+*_accessKeys.csv
 
-# Parent directory
+# Parent directory files and folders
 ../*/
-
-overview.md

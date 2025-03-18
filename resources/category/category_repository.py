@@ -1,16 +1,20 @@
-from config.Connection import prisma_connection
 from prisma.errors import PrismaError
 import logging
+
+from resources.base_repository import BaseRepository
 from resources.exceptions import DatabaseException
 
 
-class CategoryRepository:
+class CategoryRepository(BaseRepository):
     def __init__(self):
-        self.prisma = prisma_connection.prisma
+        super().__init__("category")
 
     async def find_all(self) -> list:
+        """
+        모든 카테고리를 조회합니다.
+        """
         try:
-            return await self.prisma.category.find_many(
+            return await super().find_many(
                 include={
                     "articles": {
                         "include": {
@@ -30,8 +34,11 @@ class CategoryRepository:
             )
 
     async def find_by_article_id(self, article_id: int):
+        """
+        특정 게시글의 카테고리를 조회합니다.
+        """
         try:
-            return await self.prisma.category.find_many(
+            return await super().find_many(
                 where={"articles": {"some": {"article_id": article_id}}},
                 include={
                     "articles": {
@@ -53,6 +60,9 @@ class CategoryRepository:
             )
 
     async def update(self, article_id: int, category_ids: list[int]):
+        """
+        게시글의 카테고리를 업데이트합니다.
+        """
         try:
             async with self.prisma.tx() as transaction:
                 await transaction.category_to_article.delete_many(

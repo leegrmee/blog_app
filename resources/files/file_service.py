@@ -1,11 +1,8 @@
-import os
-import uuid
-import boto3
-from botocore.exceptions import BotoCoreError, NoCredentialsError
-from fastapi import UploadFile, File, HTTPException
 import logging
+from fastapi import UploadFile, File, HTTPException
+from botocore.exceptions import BotoCoreError, NoCredentialsError
 
-from config.settings import settings
+from resources.base_s3_service import BaseS3Service
 from .file_repository import FileRepository
 from .file_repository import FileData
 from ..article.article_repository import ArticleRepository
@@ -13,39 +10,11 @@ from ..exceptions import NotFoundException, BadRequestException
 from ..schemas.response import User, UserRole
 
 
-class FileService:
+class FileService(BaseS3Service):
     def __init__(self):
+        super().__init__()
         self.file_repository = FileRepository()
         self.article_repository = ArticleRepository()
-        self.s3_client = boto3.client(
-            "s3",
-            region_name=settings.AWS_S3_REGION,
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        )
-        self.bucket_name = settings.AWS_S3_BUCKET_NAME
-        self.url = (
-            f"https://{self.bucket_name}.s3.{settings.AWS_S3_REGION}.amazonaws.com/"
-        )
-
-    def generate_signed_url(self, key: str, expires_in: int = 1000) -> str:
-        """
-        S3 객체에 대한 signed URL을 생성합니다.
-
-        :param key: S3 객체의 키 (파일 경로)
-        :param expires_in: URL의 유효 기간(초), 기본값은 1000초
-        :return: signed URL 문자열
-        """
-        try:
-            signed_url = self.s3_client.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": self.bucket_name, "Key": key},
-                ExpiresIn=expires_in,
-            )
-            return signed_url
-        except Exception as e:
-            logging.error(f"Error generating signed URL for key {key}: {e}")
-            raise HTTPException(status_code=500, detail="Failed to generate signed URL")
 
     async def upload(
         self,
@@ -53,11 +22,15 @@ class FileService:
         user_id: int,
         files: list[UploadFile] = File(None),
     ) -> list[str]:
-        # upload file to database
+        """
+        파일을 S3에 업로드하고 데이터베이스에 정보를 저장합니다.
+        """
+        # 게시글 확인
         article = await self.article_repository.find_by_id(article_id)
         if not article:
             raise NotFoundException(name="Article")
 
+        # 권한 확인
         if article.user_id != user_id:
             raise HTTPException(
                 status_code=403, detail="You are not the author of this article"
@@ -68,32 +41,24 @@ class FileService:
 
         signed_urls = []
         for file in files:
-            _, file_extension = os.path.splitext(file.filename)
-            unique_filename = f"{uuid.uuid4()}{file_extension}"
-
             try:
-                self.s3_client.upload_fileobj(
-                    file.file,
-                    self.bucket_name,
-                    unique_filename,
-                    ExtraArgs={
-                        "ContentType": file.content_type,
-                        "ACL": "private",
-                    },
-                )
+                # S3에 파일 업로드
+                key = await self.upload_file(file, folder=f"articles/{article_id}")
 
-                signed_url = self.generate_signed_url(unique_filename)
+                # 서명된 URL 생성
+                signed_url = self.generate_signed_url(key)
 
+                # 데이터베이스에 파일 정보 저장
                 file_data = FileData(
                     user_id=user_id,
-                    path=unique_filename,
+                    path=key,
                     filename=file.filename,
                     mimetype=file.content_type,
                     article_id=article_id,
                     size=file.size,
                 )
                 await self.file_repository.upload(file_data)
-                logging.info("Uploaded file with id:%s", unique_filename)
+                logging.info("Uploaded file with key: %s", key)
                 signed_urls.append(signed_url)
 
             except (BotoCoreError, NoCredentialsError) as e:
@@ -103,6 +68,9 @@ class FileService:
         return signed_urls
 
     async def get_url(self, id: int) -> str:
+        """
+        파일의 서명된 URL을 반환합니다.
+        """
         file = await self.file_repository.get_file(id)
 
         if file:
@@ -112,11 +80,15 @@ class FileService:
         raise NotFoundException(name="File")
 
     async def delete(self, id: int, current_user: User):
+        """
+        파일을 S3와 데이터베이스에서 삭제합니다.
+        """
         file = await self.file_repository.get_file(id)
 
         if not file:
             raise NotFoundException(name="File")
 
+        # 권한 확인
         if file.user_id != current_user.id and current_user.role not in [
             UserRole.MODERATOR,
             UserRole.ADMIN,
@@ -126,10 +98,12 @@ class FileService:
             )
 
         try:
-            self.s3_client.delete_object(Bucket=self.bucket_name, Key=file.path)
+            # S3에서 파일 삭제
+            self.delete_file(file.path)
+            # 데이터베이스에서 파일 정보 삭제
             await self.file_repository.delete(id)
 
-        except (BotoCoreError, NoCredentialsError) as e:
+        except Exception as e:
             logging.error(f"Error deleting file {id} from S3: {e}")
             raise HTTPException(
                 status_code=500, detail="Failed to delete the file from S3"
