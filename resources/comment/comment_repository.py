@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import TypedDict
-from config.Connection import prisma_connection
+
+from resources.base_repository import BaseRepository
 
 
 @dataclass
@@ -23,27 +24,39 @@ class UpdateCommentData(TypedDict):
     new_content: str
 
 
-class CommentRepository:
+class CommentRepository(BaseRepository):
     def __init__(self):
-        self.prisma = prisma_connection.prisma
+        super().__init__("comment")
 
     async def find_many(self, skip: int = 0, limit: int = 10):
-        return await self.prisma.comment.find_many(skip=skip, take=limit)
+        """
+        여러 댓글을 조회합니다.
+        """
+        return await super().find_many(skip=skip, take=limit)
 
     async def find_by_id(self, comment_id: int):
-        return await self.prisma.comment.find_unique(where={"id": comment_id})
+        """
+        ID로 댓글을 조회합니다.
+        """
+        return await super().find_unique(where={"id": comment_id})
 
     async def find_by_filters(self, filters: CommentFilters):
+        """
+        필터 조건에 맞는 댓글을 조회합니다.
+        """
         where_clause = {}
         if filters.get("article_id"):
             where_clause["article_id"] = filters["article_id"]
         if filters.get("user_id"):
             where_clause["user_id"] = filters["user_id"]
 
-        return await self.prisma.comment.find_many(where=where_clause)
+        return await super().find_many(where=where_clause)
 
     async def create(self, data: CommentData):
-        return await self.prisma.comment.create(
+        """
+        새 댓글을 생성합니다.
+        """
+        return await super().create(
             data={
                 "user_id": data["user_id"],
                 "article_id": data["article_id"],
@@ -52,10 +65,16 @@ class CommentRepository:
         )
 
     async def update(self, data: UpdateCommentData):
-        return await self.prisma.comment.update(
+        """
+        댓글을 업데이트합니다.
+        """
+        return await super().update(
             where={"id": data["id"]},
             data={"content": data["new_content"]},
         )
 
     async def delete(self, comment_id: int):
-        return await self.prisma.comment.delete(where={"id": comment_id})
+        """
+        댓글을 삭제합니다.
+        """
+        return await super().delete(where={"id": comment_id})
