@@ -1,23 +1,38 @@
+# Python cache files
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
 .env
 .venv
+env/
+venv/
+ENV/
+
+# Python-specific
 .python-version
+
+# System files
 .DS_Store
+Thumbs.db
 
-# Ignore all files and folders in parent directory
-../*/
+# IDE files (common)
+.idea/
+.vscode/
+*.sublime-*
 
-
-# 로그 파일
+# Log files
 *.log
 logs/
 
+# Project specific
 TODO.md
-
+overview.md
 backup.sql
+*_accessKeys.csv
 
-myblog1234512345_accessKeys.csv
-
-# Python 캐시 파일 무시
-__pycache__/
-*.pyc
+# Parent directory files and folders
+../*/
