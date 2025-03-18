@@ -1,6 +1,8 @@
 from datetime import date, datetime, timedelta, timezone
-from config.Connection import prisma_connection
 from dataclasses import dataclass
+from typing import List, Dict, Any, Optional
+
+from resources.base_repository import BaseRepository
 from resources.exceptions import NotFoundException
 
 
@@ -15,9 +17,9 @@ class UpdateParams:
 
 @dataclass
 class SearchParams:
-    """While SearchParams is similar to ArticleSearch, transforming the Pydantic model into a dataclass (or any other internal representation) can be useful for:
-    Decoupling Layers: Keeping the repository layer independent from Pydantic (and FastAPI) specifics.
-    Data Transformation: Preparing data in a format that's optimal for the repository's operations.
+    """
+    검색 파라미터 클래스입니다.
+    Pydantic 모델과 유사하지만 레이어 분리를 위해 내부 표현으로 사용합니다.
     """
 
     category_id: int | None = None
@@ -28,12 +30,15 @@ class SearchParams:
     limit: int = 10
 
 
-class ArticleRepository:
+class ArticleRepository(BaseRepository):
     def __init__(self):
-        self._prisma = prisma_connection.prisma
+        super().__init__("article")
 
     async def find_many(self, skip: int, limit: int):
-        return await self._prisma.article.find_many(
+        """
+        여러 게시글을 조회합니다.
+        """
+        return await super().find_many(
             skip=skip,
             take=limit,
             order={"created_at": "desc"},
@@ -46,7 +51,10 @@ class ArticleRepository:
         )
 
     async def find_by_id(self, article_id: int):
-        article = await self._prisma.article.find_unique(
+        """
+        ID로 게시글을 조회합니다.
+        """
+        article = await super().find_unique(
             where={"id": article_id},
             include={
                 "user": True,
@@ -61,7 +69,10 @@ class ArticleRepository:
         return article
 
     async def increment_view_count(self, article_id: int):
-        return await self._prisma.article.update(
+        """
+        게시글 조회수를 증가시킵니다.
+        """
+        return await super().update(
             where={"id": article_id},
             data={"views": {"increment": 1}},
             include={
@@ -72,23 +83,33 @@ class ArticleRepository:
         )
 
     async def increment_likes_count(self, article_id: int):
-        return await self._prisma.article.update(
+        """
+        게시글 좋아요 수를 증가시킵니다.
+        """
+        return await super().update(
             where={"id": article_id},
             data={"likes_count": {"increment": 1}},
         )
 
     async def decrement_likes_count(self, article_id: int):
-        return await self._prisma.article.update(
+        """
+        게시글 좋아요 수를 감소시킵니다.
+        """
+        return await super().update(
             where={"id": article_id},
             data={"likes_count": {"decrement": 1}},
         )
 
     async def set_likes_count(self, article_id: int, count: int):
-        await self._prisma.article.update(
-            where={"id": article_id}, data={"likes_count": count}
-        )
+        """
+        게시글 좋아요 수를 설정합니다.
+        """
+        await super().update(where={"id": article_id}, data={"likes_count": count})
 
     async def search(self, params: SearchParams):
+        """
+        검색 조건에 맞는 게시글을 조회합니다.
+        """
         filters = {}
         if params.category_id is not None:
             filters["categories"] = {"some": {"category_id": params.category_id}}
@@ -115,7 +136,7 @@ class ArticleRepository:
                 "lt": end_datetime,
             }
 
-        return await self._prisma.article.find_many(
+        return await super().find_many(
             where=filters,
             skip=params.skip,
             take=params.limit,
@@ -131,7 +152,10 @@ class ArticleRepository:
     async def create(
         self, user_id: int, title: str, content: str, category_ids: list[int]
     ):
-        async with self._prisma.tx() as transaction:
+        """
+        새 게시글을 생성합니다.
+        """
+        async with self.prisma.tx() as transaction:
             article = await transaction.article.create(
                 data={
                     "user_id": user_id,
@@ -153,16 +177,20 @@ class ArticleRepository:
         return article
 
     async def delete(self, article_id: int):
-        article = await self._prisma.article.find_unique(where={"id": article_id})
+        """
+        게시글을 삭제합니다.
+        """
+        article = await super().find_unique(where={"id": article_id})
         if not article:
             raise NotFoundException(name=f"Article with id {article_id}")
-        await self._prisma.article.delete(where={"id": article_id})
+        await super().delete(where={"id": article_id})
         return True
 
     async def update(self, params: UpdateParams):
-        article = await self._prisma.article.find_unique(
-            where={"id": params.article_id}
-        )
+        """
+        게시글을 업데이트합니다.
+        """
+        article = await super().find_unique(where={"id": params.article_id})
         if not article:
             raise NotFoundException(name=f"Article with id {params.article_id}")
 
@@ -181,7 +209,7 @@ class ArticleRepository:
                 ],
             }
 
-        updated_article = await self._prisma.article.update(
+        updated_article = await super().update(
             where={"id": article.id},
             data=update_data,
             include={

@@ -1,7 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from dataclasses import field
-from config.Connection import prisma_connection
+
+from resources.base_repository import BaseRepository
 
 
 @dataclass
@@ -15,13 +15,15 @@ class FileData:
     size: int = 0
 
 
-class FileRepository:
+class FileRepository(BaseRepository):
     def __init__(self):
-        self.prisma = prisma_connection.prisma
+        super().__init__("file")
 
     async def upload(self, file: FileData):
-        # upload file to database/ file path = s3 key
-        created_file = await self.prisma.file.create(
+        """
+        파일 정보를 데이터베이스에 저장합니다.
+        """
+        created_file = await super().create(
             data={
                 "path": file.path,
                 "filename": file.filename,
@@ -34,7 +36,10 @@ class FileRepository:
         return created_file.id
 
     async def get_file(self, id: int) -> FileData:
-        file = await self.prisma.file.find_unique(where={"id": id})
+        """
+        ID로 파일 정보를 조회합니다.
+        """
+        file = await super().find_unique(where={"id": id})
         if file:
             return FileData(
                 user_id=file.user_id,
@@ -48,4 +53,7 @@ class FileRepository:
         return None
 
     async def delete(self, id: int):
-        await self.prisma.file.delete(where={"id": id})
+        """
+        파일 정보를 삭제합니다.
+        """
+        await super().delete(where={"id": id})
