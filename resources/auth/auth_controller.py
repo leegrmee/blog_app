@@ -6,11 +6,14 @@ from resources.schemas.request import (
     UserLoginRequest,
 )
 from resources.schemas.response import JWTResponse, User
+from resources.auth.cache import redis_client
 from resources.user.user_service import UserService
 from resources.auth.auth_service import (
     get_current_user,
     auth_service,
+    oauth2_scheme,
 )
+from jose import JWTError
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -25,12 +28,12 @@ async def user_login_handler(
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
+            status_code=status.HTTP_403_FORBIDDEN, detail="User not found"
         )
 
     if not verify_password(user_credentials.password, user.hashedpassword):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid password"
         )
 
     token_data = {"user_email": user.email}
@@ -39,6 +42,23 @@ async def user_login_handler(
     token: str = auth_service.create_access_token({"user_email": user.email})
 
     return JWTResponse(access_token=token)
+
+
+# logout
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def user_logout_handler(
+    current_user: User = Depends(get_current_user),
+    token: str = Depends(oauth2_scheme),
+):
+    success_logout = await auth_service.logout(token)
+
+    if not success_logout:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Failed to logout",
+        )
+
+    return {"message": "Logged out successfully"}
 
 
 # 비밀번호 수정
@@ -62,4 +82,4 @@ async def password_update_handler(
         email=current_user.email, new_password=request.new_password
     )
 
-    return "Password updated successfully"
+    return {"message": "Password updated successfully"}
