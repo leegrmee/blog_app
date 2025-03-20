@@ -6,7 +6,6 @@ from resources.schemas.request import (
     UserLoginRequest,
 )
 from resources.schemas.response import JWTResponse, User
-from resources.auth.cache import redis_client
 from resources.user.user_service import UserService
 from resources.auth.auth_service import (
     get_current_user,
