@@ -2,11 +2,13 @@ from fastapi import status, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 from passlib.context import CryptContext
 import logging
 from resources.user.user_repository import UserRepository
 from resources.schemas.response import TokenData, User
+from resources.auth.cache import redis_client
+from config.settings import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -23,11 +25,9 @@ class AuthService:
     def __init__(self):
         self.user_repository = UserRepository()
         self.encoding: str = "UTF-8"
-        self.secretkey: str = (
-            "fca1c9a668eb97796fc628eac4ba85a50538279ee2f3a2816ebf3e67a0e6a026"
-        )
-        self.jwt_algorithm: str = "HS256"
-        self.token_expire_minutes = 30
+        self.secretkey: str = settings.JWT_SECRET_KEY
+        self.jwt_algorithm: str = settings.JWT_ALGORITHM
+        self.token_expire_minutes = settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         # schemes = ["bcrypt"] : 비밀번호 암호화 알고리즘 /List of algorithms which the instance should support.
         # deprecated="auto" : 사용되지 않는 알고리즘 자동 처리/ This may also contain a single special value, ["auto"], which will configure the CryptContext instance to deprecate all supported schemes except for the default scheme.
@@ -52,10 +52,15 @@ class AuthService:
 
         return jwt_token
 
-    async def verify_access_token(self, token: str, credentials_exception) -> TokenData:
+    async def verify_access_token(self, token: str) -> Tuple[TokenData, Dict[str, Any]]:
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
         try:
             payload = jwt.decode(token, self.secretkey, algorithms=[self.jwt_algorithm])
-            logging.info(f"Decoded token payload: {payload}")
 
             user_email = payload.get("user_email")
             logging.info(f"Extracted user_email: {user_email}")  # 추출된 이메일 로깅
@@ -67,7 +72,7 @@ class AuthService:
             token_data = TokenData(user_email=user_email)
             logging.info(f"Created TokenData: {token_data}")  # 생성된 TokenData 로깅
 
-            return token_data
+            return token_data, payload
 
         except JWTError as e:
             logging.error(f"JWTError in verify_access_token: {str(e)}")
@@ -81,7 +86,7 @@ class AuthService:
         )
 
         try:
-            token_data = await self.verify_access_token(token, credentials_exception)
+            token_data, _ = await self.verify_access_token(token)
             logging.info(f"Token data verified: {token_data}")  # 로깅 추가
 
             # user_email이 있는지 확인
@@ -104,6 +109,32 @@ class AuthService:
             logging.error(f"Error in logged_in_user: {str(e)}")
             raise credentials_exception
 
+    async def logout(self, token: str) -> bool:
+        """토큰을 블랙리스트에 추가하여 로그아웃 처리"""
+        try:
+            _, payload = await self.verify_access_token(token)
+            exp_timestamp = payload.get("exp")
+
+            # 현재 시간과 만료 시간 사이의 차이 계산
+            current_time = int(datetime.now(timezone.utc).timestamp())
+            ttl = max(0, exp_timestamp - current_time)
+
+            if ttl <= 0:
+                logging.info("Token is already expired")
+                return True  # 이미 만료된 토큰은 처리 필요 없음
+
+            # Redis에 블랙리스트 토큰 저장
+            redis_client.setex(f"bl_{token}", ttl, "1")
+            logging.info(f"Token blacklisted successfully, TTL: {ttl} seconds")
+            return True
+
+        except JWTError as e:
+            logging.error(f"JWT error during logout: {str(e)}")
+            return False
+        except Exception as e:
+            logging.error(f"Error during logout: {str(e)}")
+            return False
+
 
 # 전역 인스턴스 생성
 auth_service = AuthService()
@@ -112,11 +143,16 @@ auth_service = AuthService()
 # 의존성 함수 정의
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
-        user: User = await auth_service.logged_in_user(token)
-        logging.info(f"Current user: {user}")
-        logging.info(f"Successfully retrieved user: {user.email}")
+        if redis_client.get(f"bl_{token}"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token is blacklisted",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
+        user: User = await auth_service.logged_in_user(token)
         return user
+
     except Exception as e:
         logging.error(f"Error in get_current_user: {str(e)}")
         raise HTTPException(
