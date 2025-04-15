@@ -24,11 +24,6 @@ MANIFEST
 # Virtual Environment
 .env
 .venv/
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
 
 # IDE
 .idea/
@@ -43,9 +38,6 @@ venv.bak/
 # Logs
 *.log
 logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # Local development
 .DS_Store
@@ -57,24 +49,10 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Project specific
-backup_original/
+# Backup
 temp_backup/
+backup_original/
 backup.sql
-TODO.md
-overview.md
-*_accessKeys.csv
-
-# Uploads and Static files
-uploads/*
-!uploads/.gitkeep
-static/img/*
-!static/img/.gitkeep
-
-# Prisma
-src/models/prisma/migrations/
-src/models/prisma/*.db
-src/models/prisma/dev.db
 
 # Environment
 .env.local
@@ -83,41 +61,7 @@ src/models/prisma/dev.db
 .env.test
 .env.production
 
-# Test coverage
-.coverage
-htmlcov/
-.pytest_cache/
-.tox/
-.coverage.*
-coverage.xml
-*.cover
-.hypothesis/
-
-# Distribution
-dist/
-build/
-*.egg-info/
 
 # Documentation
 docs/_build/
 site/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# Parent directory files and folders
-../*
