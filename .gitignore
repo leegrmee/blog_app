@@ -1,38 +1,123 @@
-# Python cache files
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Virtual environments
+# Virtual Environment
 .env
-.venv
+.venv/
 env/
 venv/
 ENV/
+env.bak/
+venv.bak/
 
-# Python-specific
-.python-version
-
-# System files
-.DS_Store
-Thumbs.db
-
-# IDE files (common)
+# IDE
 .idea/
 .vscode/
-*.sublime-*
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
 
-# Log files
+# Logs
 *.log
 logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local development
+.DS_Store
+Thumbs.db
+*.sqlite
+*.sqlite3
+*.db
+*.bak
+*.tmp
+*.temp
 
 # Project specific
+backup_original/
+temp_backup/
+backup.sql
 TODO.md
 overview.md
-backup.sql
 *_accessKeys.csv
 
+# Uploads and Static files
+uploads/*
+!uploads/.gitkeep
+static/img/*
+!static/img/.gitkeep
+
+# Prisma
+src/models/prisma/migrations/
+src/models/prisma/*.db
+src/models/prisma/dev.db
+
+# Environment
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Documentation
+docs/_build/
+site/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
 # Parent directory files and folders
-../*/
+../*
