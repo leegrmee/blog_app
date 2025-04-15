@@ -1,45 +1,66 @@
-приложение Блога
+# Blog API
 
-сущности:
+A modern blog API service built with FastAPI and Prisma. Provides core blogging features as REST APIs including user authentication, post management, comments, likes, and file uploads.
 
-Пользователь
-Статья
-Категория
-Комментарий[]
-Лайк[]
-Картинка Статьи[]
- 
-1) создать апи с CRUD для cущностей и связей
-2) создать апи для аутентификации JWT
-3) у пользователя должны быть права на создание, редактирование и удаление статей, комментариев, лайков, картинок статей
-4) Можно создавать пользователей с разными ролями: пользователь, автор, редактор, администратор
-5) у каждой сущности должны быть поля: id, дата создания, дата изменения
-6) использовать Docker compose для запуска бд postgres, s3 файловое хранилище, prisma ORM, fastapi, swagger
-7) реализовать graphql для апи
+## Key Features
 
-шаг 1) создать апи с CRUD для cущностей и связей, rest api
-шаг 2) создать апи для аутентификации JWT
-шаг 3) создать апи с поиском статей по фильтрам категория, автор, дата создания, дата изменения
-шаг 4) добавить к статьям картинки
-шаг 5) swagger и постман коллекция для апи
+- 🔐 **User Management**: JWT-based authentication, role-based authorization (ADMIN, AUTHOR, USER)
+- 📝 **Posts**: CRUD operations, category classification, search, pagination
+- 💬 **Comments**: Post-specific comment management
+- 👍 **Likes**: Post like/dislike functionality
+- 📁 **Files**: AWS S3-based file upload and management
 
-шаг 7) реализовать базовый класс который в себе реализует методы для работы с бд через prisma
-шаг 8) реализовать базовый класс который в себе реализует методы для работы с s3
+## Tech Stack
+
+- **Backend**: FastAPI, Python 3.11+
+- **ORM**: Prisma
+- **Database**: PostgreSQL
+- **Storage**: AWS S3
+- **Cache**: Redis
+- **Authentication**: JWT
+
+## Installation & Setup
+
+1. Clone Repository
+```bash
+git clone https://github.com/yourusername/blog-api.git
+cd blog-api
+```
+
+2. Set Up Virtual Environment
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+3. Configure Environment Variables
+```bash
+cp .env.example .env
+# Edit .env file with your configurations
+```
+
+4. Database Migration
+```bash
+prisma db push
+```
+
+5. Run Server
+```bash
+uvicorn main:app --reload
+```
+
+## API Documentation
+
+Access the API documentation at:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
 
-//// для продвинутого уровня
-шаг 6) реализовать graphql для апи
+## Contributing
 
-
-прочитать в документации prisma как делать связи один ко многим и многие ко многим
-прочитать для чего в призма нужны команды push pull deploy
-
-// РЕАЛИЗОВАТЬ ЧИСТУЮ АРХИТЕКТУРУ (разделить на слои по доменной логике, сервисы, репозитории, контроллеры)
-
-googling structure of data / graph and tree 
-
-// на настройку проекта 3 дня на поиск информации призма 1 день
-сделать круды  - 4 дня
-сделать апи для аутентификации - 4 дня
-сделать апи с поиском статей по фильтрам категория, автор, дата создания, дата изменения - 4 дня
-добавить к статьям картинки - 4 дня
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request

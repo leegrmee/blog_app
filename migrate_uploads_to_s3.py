@@ -1,7 +1,7 @@
 import os
 import boto3
-from config.Connection import prisma_connection
-from config.settings import settings
+from src.core.database.connection import prisma_connection
+from src.core.config.settings import settings
 import logging
 import asyncio
 
