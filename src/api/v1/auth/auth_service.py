@@ -10,7 +10,7 @@ from src.schemas.response import TokenData, User
 from src.services.auth.cache import redis_client
 from src.core.config.settings import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=True)
 
 
 class AuthService:
@@ -38,11 +38,20 @@ class AuthService:
             minutes=self.token_expire_minutes
         )
 
-        # 토큰 페이로드 로깅
-        logging.info(f"Token data before encoding: {to_encode}")
+        # 토큰 페이로드에 추가 보안 정보 포함
+        to_encode.update(
+            {
+                "exp": expire,
+                "iat": datetime.now(timezone.utc),
+                "iss": "blog-app",  # 토큰 발급자
+                "aud": "blog-app-users",  # 토큰 대상자
+                "type": "access",  # 토큰 타입
+                "sub": data.get("user_email"),  # JWT 표준에 맞게 sub 클레임 사용
+            }
+        )
 
-        to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
-        # iat = issued at
+        # 민감한 정보는 로깅하지 않음
+        logging.info("Token created with expiration: %s", expire)
 
         jwt_token: str = jwt.encode(
             to_encode,
@@ -60,18 +69,20 @@ class AuthService:
         )
 
         try:
-            payload = jwt.decode(token, self.secretkey, algorithms=[self.jwt_algorithm])
+            payload = jwt.decode(
+                token,
+                self.secretkey,
+                algorithms=[self.jwt_algorithm],
+                audience="blog-app-users",
+                issuer="blog-app",
+            )
 
-            user_email = payload.get("user_email")
-            logging.info(f"Extracted user_email: {user_email}")
-
+            user_email = payload.get("sub")
             if not user_email:
                 logging.error("user_email not found in payload")
                 raise credentials_exception
 
             token_data = TokenData(user_email=user_email)
-            logging.info(f"Created TokenData: {token_data}")
-
             return token_data, payload
 
         except JWTError as e:
@@ -134,6 +145,25 @@ class AuthService:
         except Exception as e:
             logging.error(f"Error during logout: {str(e)}")
             return False
+
+    async def login(self, user_email: str, password: str) -> str:
+        user = await self.user_repository.find_one_by_email(user_email)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        if not self.pwd_context.verify(password, user.hashedpassword):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        token_data = {"user_email": user.email}
+        return self.create_access_token(token_data)
 
 
 # 전역 인스턴스 생성

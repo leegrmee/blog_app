@@ -2,6 +2,7 @@ import os
 import uuid
 import boto3
 from botocore.exceptions import BotoCoreError, NoCredentialsError
+from botocore.config import Config
 from fastapi import UploadFile, HTTPException
 import logging
 from typing import List
@@ -15,11 +16,13 @@ class BaseS3Service:
     """
 
     def __init__(self):
+        config = Config(signature_version="s3v4")
         self.s3_client = boto3.client(
             "s3",
             region_name=settings.AWS_S3_REGION,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            config=config,
         )
         self.bucket_name = settings.AWS_S3_BUCKET_NAME
         self.base_url = (
@@ -83,8 +86,12 @@ class BaseS3Service:
         try:
             signed_url = self.s3_client.generate_presigned_url(
                 "get_object",
-                Params={"Bucket": self.bucket_name, "Key": key},
+                Params={
+                    "Bucket": self.bucket_name,
+                    "Key": key,
+                },
                 ExpiresIn=expires_in,
+                HttpMethod="GET",
             )
             return signed_url
         except Exception as e:

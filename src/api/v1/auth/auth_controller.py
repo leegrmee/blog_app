@@ -1,10 +1,7 @@
-import logging
 from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from src.services.auth.auth_utils import verify_password
-from src.schemas.request import (
-    PasswordUpdateRequest,
-    UserLoginRequest,
-)
+from src.schemas.request import PasswordUpdateRequest
 from src.schemas.response import JWTResponse, User
 from src.api.v1.users.user_service import UserService
 from src.api.v1.auth.auth_service import (
@@ -14,33 +11,39 @@ from src.api.v1.auth.auth_service import (
 )
 
 
-router = APIRouter(tags=["Authentication"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 # 로그인
-@router.post("/login", status_code=status.HTTP_200_OK)
-async def user_login_handler(
-    user_credentials: UserLoginRequest,
+@router.post("/login", response_model=JWTResponse)
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
     user_service: UserService = Depends(),
 ):
-    user: User | None = await user_service.find_one_by_email(user_credentials.email)
+    """
+    OAuth2 호환 로그인 엔드포인트
+    username 필드에 이메일을 입력하세요
+    """
+    user = await user_service.find_one_by_email(form_data.username)
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User not found"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if not verify_password(user_credentials.password, user.hashedpassword):
+    if not verify_password(form_data.password, user.hashedpassword):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid password"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     token_data = {"user_email": user.email}
-    logging.info(f"Creating token with data: {token_data}")
+    access_token = auth_service.create_access_token(token_data)
 
-    token: str = auth_service.create_access_token({"user_email": user.email})
-
-    return JWTResponse(access_token=token)
+    return JWTResponse(access_token=access_token, token_type="bearer")
 
 
 # logout
