@@ -28,13 +28,16 @@ class BaseS3Service:
         self.base_url = (
             f"https://{self.bucket_name}.s3.{settings.AWS_S3_REGION}.amazonaws.com/"
         )
+        logging.info(f"S3 service initialized for bucket: {self.bucket_name}")
 
     def generate_unique_filename(self, original_filename: str) -> str:
         """
         고유한 파일 이름을 생성합니다.
         """
         ext = os.path.splitext(original_filename)[1] if original_filename else ""
-        return f"{uuid.uuid4()}{ext}"
+        unique_filename = f"{uuid.uuid4()}{ext}"
+        logging.debug(f"Generated unique filename: {unique_filename}")
+        return unique_filename
 
     async def upload_file(self, file: UploadFile, folder: str = "") -> str:
         """

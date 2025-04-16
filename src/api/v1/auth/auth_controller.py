@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from src.services.auth.auth_utils import verify_password
@@ -25,8 +26,10 @@ async def login(
     username 필드에 이메일을 입력하세요
     """
     user = await user_service.find_one_by_email(form_data.username)
+    logging.info(f"Login attempt for user: {form_data.username}")
 
     if not user:
+        logging.warning(f"Login failed: User not found - {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -34,6 +37,7 @@ async def login(
         )
 
     if not verify_password(form_data.password, user.hashedpassword):
+        logging.warning(f"Login failed: Invalid password - {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -42,6 +46,7 @@ async def login(
 
     token_data = {"user_email": user.email}
     access_token = auth_service.create_access_token(token_data)
+    logging.info(f"Login successful: {form_data.username}")
 
     return JWTResponse(access_token=access_token, token_type="bearer")
 

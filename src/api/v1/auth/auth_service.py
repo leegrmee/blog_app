@@ -78,6 +78,8 @@ class AuthService:
             )
 
             user_email = payload.get("sub")
+            logging.info(f"Token verified for user: {user_email}")
+
             if not user_email:
                 logging.error("user_email not found in payload")
                 raise credentials_exception
