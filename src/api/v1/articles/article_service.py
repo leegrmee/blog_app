@@ -4,7 +4,7 @@ from src.api.v1.articles.article_repository import (
     SearchParams,
     UpdateParams,
 )
-from src.schemas.response import ArticleResponse, UserRole, User
+from src.schemas.response import ArticleResponse, UserRole, User, FileResponse
 from src.api.v1.files.file_service import FileService
 from src.api.v1.likes.like_repository import LikeRepository
 from src.core.exceptions.base import PermissionDeniedException
@@ -103,17 +103,31 @@ class ArticleService:
         This method processes article data for ArticleResponse.
         - Calculate likes_count
         - Extract category IDs
-        - Extract file URLs
+        - Process file information
         """
-
         # Calculate likes_count
         article.likes_count = len(article.likes) if article.likes else 0
 
         # Extract category IDs
         categories = [item.category.id for item in article.categories]
 
-        file_urls = [f"/files/{file.id}" for file in article.files]
-        files = file_urls
+        # Process files
+        files = []
+        file_service = FileService()  # FileService 인스턴스 생성
+        for file in article.files:
+            file_type = file_service._get_file_type(file.mimetype)
+            url = f"/api/v1/files/?id={file.id}"
+
+            files.append(
+                FileResponse(
+                    id=file.id,
+                    filename=file.filename,
+                    mimetype=file.mimetype,
+                    size=file.size,
+                    type=file_type,
+                    url=url,
+                )
+            )
 
         # Return processed article
         return ArticleResponse(
