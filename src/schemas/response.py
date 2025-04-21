@@ -1,6 +1,7 @@
 from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
+from typing import List
 
 
 class UserRole(str, Enum):
@@ -8,6 +9,21 @@ class UserRole(str, Enum):
     AUTHOR = "author"
     MODERATOR = "moderator"
     ADMIN = "admin"
+
+
+class FileType(str, Enum):
+    IMAGE = "image"
+    DOCUMENT = "document"
+    OTHER = "other"
+
+
+class FileResponse(BaseModel):
+    id: int
+    filename: str
+    mimetype: str
+    size: int
+    type: FileType
+    url: str
 
 
 # 역할의 계층 정의 (숫자가 클수록 높은 권한)
@@ -69,6 +85,12 @@ class LikeResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
+class FileUploadResponse(BaseModel):
+    urls: list[str]
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
 class ArticleResponse(BaseModel):
     id: int
     user_id: int
@@ -79,7 +101,7 @@ class ArticleResponse(BaseModel):
     updated_at: datetime | None = None
     categories: list[int] | None = Field(default_factory=list)
     likes_count: int = 0
-    files: list[str] | None = Field(default_factory=list)
+    files: List[FileResponse] | None = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
@@ -147,11 +169,5 @@ class CategoryToArticleResponse(BaseModel):
 class UserCatArticleResponse(BaseModel):
     user_id: int
     categories_with_articles: CategoriesResponse
-
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
-
-
-class FileUploadResponse(BaseModel):
-    urls: list[str]
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)

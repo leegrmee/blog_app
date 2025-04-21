@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass
+from typing import List
+from pydantic import ConfigDict
 
 from src.core.database.base_repo import BaseRepository
 
@@ -11,8 +12,9 @@ class FileData:
     filename: str
     mimetype: str
     article_id: int
-    upload_time: datetime = field(default_factory=datetime.now)
     size: int = 0
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class FileRepository(BaseRepository):
@@ -51,6 +53,13 @@ class FileRepository(BaseRepository):
             )
 
         return None
+
+    async def find_many(self, article_id: int) -> List[FileData]:
+        """
+        게시글에 속한 모든 파일을 조회합니다.
+        """
+        files = await super().find_many(where={"article_id": article_id})
+        return [FileData.model_config(file) for file in files]
 
     async def delete(self, id: int):
         """
